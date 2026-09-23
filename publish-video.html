@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Story.fun | 发布视频</title>
+  <style>
+    :root {
+      --bg: #f5faff;
+      --surface: #ffffff;
+      --accent: #000000;
+      --accent-soft: rgba(0, 0, 0, 0.12);
+      --text: #13202e;
+      --text-muted: #5e6f83;
+      --border: #deeaf7;
+      --danger: #f45b69;
+      font-family: "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { margin: 0; min-height: 100vh; background: #F2F2F7; color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
+    input, textarea, button { font-family: inherit; }
+
+    /* ===== Navigation Bar ===== */
+    .nav-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 48px; padding: 0 12px; padding-top: env(safe-area-inset-top, 0px);
+      background: rgba(255,255,255,0.94); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.33px solid rgba(0,0,0,0.1);
+    }
+    .nav-bar .nav-left {
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border: none; background: none;
+      color: #1C1C1E; font-size: 0.92rem; font-weight: 500; cursor: pointer;
+      border-radius: 8px; transition: background 0.15s;
+    }
+    .nav-bar .nav-left:active { background: rgba(0,0,0,0.05); }
+    .nav-bar .nav-left svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .nav-bar .nav-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-size: 1rem; font-weight: 700; white-space: nowrap;
+    }
+
+    /* ===== Main Content ===== */
+    .page-content {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      padding-top: 48px;
+      padding-top: calc(48px + env(safe-area-inset-top, 0px));
+      padding-bottom: 80px;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ===== Video Gallery Grid (Mobile) ===== */
+    .gallery-header {
+      padding: 16px 16px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .gallery-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .gallery-header .gallery-count { font-size: 0.82rem; color: rgba(255,255,255,0.45); }
+    .video-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 3px; padding: 0 12px 32px;
+    }
+    .video-grid-item {
+      position: relative; aspect-ratio: 1 / 1;
+      background: #1a1a1a; border-radius: 4px;
+      overflow: hidden; cursor: pointer;
+    }
+    .video-grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video-grid-item .duration-badge {
+      position: absolute; bottom: 6px; left: 6px;
+      padding: 2px 6px; border-radius: 4px;
+      background: rgba(0,0,0,0.7); color: #fff;
+      font-size: 0.65rem; font-weight: 500; letter-spacing: 0.02em;
+    }
+    .video-grid-item .check-circle {
+      position: absolute; top: 6px; right: 6px;
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.3);
+      display: grid; place-items: center;
+      font-size: 0.65rem; color: #fff;
+      transition: all 0.2s ease; z-index: 2;
+    }
+    .video-grid-item.selected .check-circle { background: var(--accent); border-color: var(--accent); }
+    .video-grid-item .check-circle svg { width: 12px; height: 12px; display: none; }
+    .video-grid-item.selected .check-circle svg { display: block; }
+
+    /* ===== Desktop Upload Area (hidden on mobile) ===== */
+    .desktop-upload-area { display: none; }
+
+    /* ===== Bottom Bar ===== */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255,255,255,0.94); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid rgba(0,0,0,0.08);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .bottom-bar .next-btn {
+      flex: 1; padding: 14px; border-radius:999px; border: none;
+      font-size: 1rem; font-weight: 700;
+      background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.25);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .bottom-bar .next-btn.active { background: var(--accent); color: #fff; }
+    .bottom-bar .next-btn:active { opacity: 0.8; }
+    .bottom-bar .publish-btn {
+      flex: 1; padding: 14px; border-radius:999px; border: none;
+      font-size: 1rem; font-weight: 700; background: var(--accent); color: #fff;
+      cursor: pointer; transition: opacity 0.15s; display: none;
+    }
+    .bottom-bar .publish-btn.show { display: block; }
+    .bottom-bar .publish-btn:active { opacity: 0.8; }
+    .bottom-bar .publish-btn:disabled { opacity: 0.4; }
+
+    /* ===== Edit Cover Button ===== */
+    .edit-cover-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 999px; border: 0.5px solid rgba(0,0,0,0.15);
+      background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.5); font-size: 0.8rem;
+      font-weight: 500; cursor: pointer; transition: all 0.15s;
+    }
+    .edit-cover-btn:active { background: rgba(0,0,0,0.08); }
+
+    /* ===== Preview Modal (fullscreen video player) ===== */
+    .preview-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000; display: none; flex-direction: column;
+    }
+    .preview-overlay.show { display: flex; }
+    .preview-overlay .preview-close {
+      position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); left: 16px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 1.2rem;
+      cursor: pointer; display: grid; place-items: center; z-index: 10;
+    }
+    .preview-overlay .preview-video-area {
+      flex: 1; display: flex; align-items: center; justify-content: center; background: #000;
+    }
+    .preview-overlay .preview-video-area video { width: 100%; max-height: 100%; display: block; object-fit: contain; }
+    .preview-overlay .preview-progress {
+      position: absolute; bottom: 120px; left: 16px; right: 16px;
+      height: 3px; background: rgba(255,255,255,0.2);
+      border-radius: 2px; overflow: hidden; z-index: 5;
+    }
+    .preview-overlay .preview-progress .progress-fill {
+      height: 100%; background: var(--accent); border-radius: 2px;
+      transition: width 0.15s linear; width: 0%;
+    }
+    .preview-overlay .preview-time {
+      position: absolute; bottom: 128px; right: 16px;
+      font-size: 0.75rem; color: rgba(255,255,255,0.6); z-index: 5;
+    }
+    .preview-overlay .preview-play-btn {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+      border: none; cursor: pointer; display: grid; place-items: center;
+      z-index: 5; transition: opacity 0.2s;
+    }
+    .preview-overlay .preview-play-btn.hidden { opacity: 0; pointer-events: none; }
+    .preview-overlay .preview-play-btn svg { width: 28px; height: 28px; fill: #fff; margin-left: 2px; }
+    .preview-overlay .preview-bottom-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 16px 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(0deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+      z-index: 10; display: flex; align-items: center; gap: 12px;
+    }
+    .preview-overlay .preview-bottom-bar .next-btn {
+      flex: 1; padding: 14px; border-radius:999px; border: none;
+      font-size: 1rem; font-weight: 700; background: var(--accent); color: #fff;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+
+    /* ===== Editor View ===== */
+    .video-stage {
+      position: relative; width: 100%; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 16px; gap: 12px;
+    }
+    .video-stage .stage-placeholder {
+      width: auto; max-width: 140px; aspect-ratio: 9 / 16;
+      object-fit: cover; display: block; border-radius:999px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .video-stage .video-play-icon {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: grid; place-items: center; pointer-events: none;
+    }
+    .video-stage .video-play-icon svg { width: 24px; height: 24px; fill: #fff; margin-left: 2px; }
+    .form-section { padding: 16px 16px 32px; background: transparent; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: rgba(0,0,0,0.45); text-transform: uppercase;
+      letter-spacing: 0.04em; margin-bottom: 8px; padding-left: 4px;
+    }
+    .form-group input[type="text"],
+    .form-group textarea {
+      width: 100%; padding: 14px 16px; border-radius: 14px; border: none;
+      background: #fff; color: #1C1C1E; font-size: 0.95rem; outline: none;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus { box-shadow: 0 0 0 2px rgba(0, 0, 0,0.3); }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group .char-count {
+      text-align: right; font-size: 0.78rem;
+      color: rgba(0,0,0,0.3); margin-top: 4px;
+    }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+      z-index: 9999; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      color: #fff; padding: 16px 28px; border-radius: 16px;
+      font-size: 0.95rem; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    /* ===== Desktop responsive ===== */
+    @media (min-width: 681px) {
+      body { background: var(--bg); color: var(--text); }
+      .nav-bar { background: var(--surface); color: var(--text); border-bottom: 1px solid var(--border); }
+      .nav-bar .nav-left { color: var(--text); }
+      .nav-bar .nav-title { color: var(--text); }
+      .page-content { background: var(--bg); padding: 16px 24px; position: static; padding-bottom: 48px; max-width: 720px; margin: 0 auto; }
+      .gallery-header { display: none; }
+      .video-grid { display: none; }
+      .desktop-upload-area { display: block; }
+      .bottom-bar { display: none; }
+      .form-section { background: var(--surface); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+      .form-group label { color: var(--text-muted); }
+      .form-group input[type="text"],
+      .form-group textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+      .form-group input[type="text"]:focus,
+      .form-group textarea:focus { background: #fff; }
+      .form-group .char-count { color: var(--text-muted); }
+      .preview-overlay { display: none !important; }
+    }
+
+    /* ===== Desktop Upload Zone Styles ===== */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius:999px; padding: 64px 32px;
+      text-align: center; cursor: pointer;
+      transition: all 0.25s ease;
+      background: var(--surface); margin-bottom: 24px;
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+    .upload-zone .upload-icon {
+      width: 56px; height: 56px; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+    }
+    .upload-zone .upload-icon svg { width: 28px; height: 28px; }
+    .upload-zone .upload-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .upload-zone .upload-hint { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+    .upload-zone .upload-formats { font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; }
+
+    /* ===== Selected Video Card (Desktop) ===== */
+    .selected-video-card {
+      display: none; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .selected-video-card.show { display: flex; gap: 20px; align-items: flex-start; }
+    .selected-video-card .video-preview-wrap {
+      flex-shrink: 0; width: 180px; aspect-ratio: 9 / 16;
+      border-radius: 12px; overflow: hidden; background: #000; position: relative;
+    }
+    .selected-video-card .video-preview-wrap video { width: 100%; height: 100%; object-fit: cover; }
+    .selected-video-card .video-info {
+      flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;
+    }
+    .selected-video-card .video-info h3 {
+      font-size: 1rem; font-weight: 700; color: var(--text);
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    .selected-video-card .video-info .meta-row {
+      display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.82rem; color: var(--text-muted);
+    }
+    .selected-video-card .video-info .change-btn {
+      align-self: flex-start; padding: 8px 18px; border-radius:999px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .selected-video-card .video-info .change-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ===== Desktop Cover Edit ===== */
+    .desktop-cover-actions {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border);
+    }
+    .desktop-cover-actions .desktop-cover-label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+    .desktop-cover-actions .desktop-cover-thumb {
+      width: 80px; height: 80px; border-radius:999px;
+      object-fit: cover; cursor: pointer; background: var(--bg);
+      border: 2px dashed var(--border);
+    }
+    .desktop-cover-actions .desktop-cover-thumb:hover { border-color: var(--accent); }
+
+    /* ===== Desktop Publish Section ===== */
+    .desktop-publish-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px; margin-bottom: 24px;
+    }
+    .desktop-publish-section .form-section { padding: 10px 10px 16px; background: transparent; box-shadow: none; }
+    .desktop-publish-btn {
+      width: 100%; padding: 14px; border-radius:999px; border: none;
+      font-size: 1rem; font-weight: 700; background: var(--accent); color: #fff;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .desktop-publish-btn:hover { opacity: 0.9; }
+    .desktop-publish-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <button class="nav-left" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="nav-title" id="navTitle">选择视频</span>
+  </div>
+
+  <div class="page-content">
+    <!-- Gallery View -->
+    <div id="galleryView">
+      <div class="gallery-header"></div>
+      <div class="video-grid" id="videoGrid"></div>
+
+      <!-- Desktop: Upload Area -->
+      <div class="desktop-upload-area" id="desktopUploadArea">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('desktopVideoInput').click()">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="upload-title">点击或拖拽上传视频</div>
+          <div class="upload-hint">选择您要发布的视频文件</div>
+          <div class="upload-formats">支持 MP4、MOV、WebM 格式</div>
+        </div>
+        <input type="file" accept="video/mp4,video/mov,video/webm,video/quicktime" id="desktopVideoInput" style="display:none;" />
+
+        <!-- Selected Video Card -->
+        <div class="selected-video-card" id="selectedVideoCard">
+          <div class="video-preview-wrap">
+            <video id="selectedVideoPreview" src="" muted playsinline></video>
+          </div>
+          <div class="video-info">
+            <h3 id="selectedVideoName"></h3>
+            <div class="meta-row">
+              <span id="selectedVideoDuration">--</span>
+              <span id="selectedVideoSize">--</span>
+            </div>
+            <button class="change-btn" onclick="resetDesktopSelection()">重新选择</button>
+          </div>
+          <div class="desktop-cover-actions">
+            <span class="desktop-cover-label">封面</span>
+            <img class="desktop-cover-thumb" id="desktopCoverThumb" src="" alt="点击更换封面" title="点击更换封面" onclick="document.getElementById('desktopCoverInput').click()" />
+            <input type="file" accept="image/*" id="desktopCoverInput" style="display:none;" />
+          </div>
+        </div>
+
+        <!-- Desktop Description & Publish -->
+        <div class="desktop-publish-section" id="desktopPublishSection" style="display:none;">
+          <div class="form-section">
+            <div class="form-group">
+              <textarea id="desktopInputDesc" placeholder="添加作品描述..." rows="4"></textarea>
+              <div class="char-count" id="desktopCharCount">0/100</div>
+            </div>
+          </div>
+          <button class="desktop-publish-btn" id="desktopPublishBtn" onclick="publishVideoDesktop()">发布</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor View (hidden until next step - Mobile only) -->
+    <div id="editorView" style="display:none;">
+      <div class="video-stage">
+        <img class="stage-placeholder" id="editorCover" src="" alt="" />
+        <div class="video-play-icon">
+          <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21" fill="white"/></svg>
+        </div>
+        <button class="edit-cover-btn" onclick="openCoverPicker()">编辑封面</button>
+        <input type="file" accept="image/*" id="coverInput" style="display:none;" />
+      </div>
+      <div class="form-section">
+        <div class="form-group">
+          <textarea id="inputDesc" placeholder="添加作品描述..." rows="4"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar (Mobile only) -->
+  <div class="bottom-bar" id="bottomBar">
+    <button class="next-btn" id="nextBtn" disabled onclick="goToEditor()">下一步</button>
+    <button class="publish-btn" id="publishBarBtn" onclick="publishVideo()">发布</button>
+  </div>
+
+  <!-- Preview Modal (Mobile only) -->
+  <div class="preview-overlay" id="previewOverlay">
+    <button class="preview-close" onclick="closePreview()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="preview-video-area" onclick="togglePreviewPlay()">
+      <video id="previewVideo" src="" playsinline webkit-playsinline x5-video-player-type="h5"></video>
+      <div class="preview-play-btn" id="previewPlayBtn">
+        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+    </div>
+    <div class="preview-progress" id="previewProgress"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="preview-time" id="previewTime">0:00 / 0:00</div>
+    <div class="preview-bottom-bar">
+      <button class="next-btn" onclick="goToEditorFromPreview()">下一步</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  let selectedVideoId = null;
+  let previewVideoId = null;
+  let editVideo = null;
+
+  // Desktop state
+  let desktopVideoFile = null;
+  let desktopVideoObjectURL = null;
+
+  function isDesktop() {
+    return window.matchMedia('(min-width: 681px)').matches;
+  }
+
+  // ===== Dummy Video Data (Mobile) =====
+  const videoGallery = [
+    { id: 1, title: '丞相府今日开饭', cover: 'image/chengxiangfu_cover.jpg', duration: '0:32' },
+    { id: 2, title: '打斗精彩片段', cover: 'image/chengxiangfu_cover.jpg', duration: '1:15' },
+    { id: 3, title: '凤骨琉璃 EP01', cover: 'image/fenggu_cover.jpg', duration: '0:58' },
+    { id: 4, title: '我卸甲后天下大乱了', cover: 'image/xiejia_cover.jpg', duration: '2:01' },
+    { id: 5, title: '凤骨琉璃 EP02', cover: 'image/fenggu_cover.jpg', duration: '0:45' },
+    { id: 6, title: '长安如梦 EP01', cover: 'image/cover-candle.jpg', duration: '1:30' },
+    { id: 7, title: '长安如梦 EP02', cover: 'image/cover-survivor.jpg', duration: '1:22' },
+    { id: 8, title: '零夜序章', cover: 'image/cover-zero-night.jpg', duration: '0:55' },
+    { id: 9, title: '金字塔探险', cover: 'image/cover-pyramid.jpg', duration: '1:08' },
+    { id: 10, title: '全押时刻', cover: 'image/cover-allin.jpg', duration: '3:12' },
+    { id: 11, title: '名字的故事', cover: 'image/cover-names.jpg', duration: '0:48' },
+    { id: 12, title: '暗流涌动', cover: 'image/cover-candle.jpg', duration: '1:40' },
+  ];
+
+  // ===== Render (Mobile or Desktop) =====
+  function renderGallery() {
+    if (isDesktop()) {
+      initDesktopUpload();
+      return;
+    }
+    const grid = document.getElementById('videoGrid');
+    grid.innerHTML = videoGallery.map(v => {
+      const isSelected = selectedVideoId === v.id;
+      return '<div class="video-grid-item ' + (isSelected ? 'selected' : '') + '" data-id="' + v.id + '">' +
+        '<img src="' + v.cover + '" alt="' + v.title + '" onerror="this.style.background=\'linear-gradient(135deg, #1a2a3a, #0d1b2a)\'" />' +
+        '<span class="duration-badge">' + v.duration + '</span>' +
+        '<div class="check-circle" onclick="event.stopPropagation();toggleSelect(' + v.id + ')">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</div>' +
+        '<div onclick="openPreview(' + v.id + ')" style="position:absolute;inset:0;z-index:1;"></div>' +
+        '</div>';
+    }).join('');
+    updateNextBtn();
+  }
+
+  renderGallery();
+
+  // ===== Desktop Upload =====
+  function initDesktopUpload() {
+    var uploadZone = document.getElementById('uploadZone');
+    var fileInput = document.getElementById('desktopVideoInput');
+    if (!uploadZone || !fileInput) return;
+
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files.length > 0) handleDesktopFile(e.target.files[0]);
+      this.value = '';
+    });
+
+    uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', function(e) { this.classList.remove('drag-over'); });
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) handleDesktopFile(e.dataTransfer.files[0]);
+    });
+
+    // Desktop cover input binding
+    var coverInput = document.getElementById('desktopCoverInput');
+    coverInput.addEventListener('change', function(e) {
+      if (e.target.files.length === 0) return;
+      var file = e.target.files[0];
+      if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev) { document.getElementById('desktopCoverThumb').src = ev.target.result; };
+      reader.readAsDataURL(file);
+      this.value = '';
+    });
+
+    // Desktop desc char count
+    var descTextarea = document.getElementById('desktopInputDesc');
+    descTextarea.addEventListener('input', function() {
+      if (this.value.length > 100) { this.value = this.value.slice(0, 100); showToast('最多输入100字'); }
+      document.getElementById('desktopCharCount').textContent = this.value.length + '/100';
+    });
+  }
+
+  function handleDesktopFile(file) {
+    var validTypes = ['video/mp4', 'video/mov', 'video/webm', 'video/quicktime'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp4|mov|webm)$/i)) {
+      showToast('请选择 MP4、MOV 或 WebM 格式的视频文件');
+      return;
+    }
+
+    if (desktopVideoObjectURL) URL.revokeObjectURL(desktopVideoObjectURL);
+    desktopVideoFile = file;
+    desktopVideoObjectURL = URL.createObjectURL(file);
+
+    // Show video preview
+    var videoPreview = document.getElementById('selectedVideoPreview');
+    videoPreview.src = desktopVideoObjectURL;
+    videoPreview.addEventListener('loadeddata', function() { videoPreview.currentTime = 0.5; }, { once: true });
+
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('selectedVideoCard').classList.add('show');
+    document.getElementById('selectedVideoName').textContent = file.name;
+    document.getElementById('selectedVideoSize').textContent = formatFileSize(file.size);
+
+    // Show publish section
+    document.getElementById('desktopPublishSection').style.display = 'block';
+    document.getElementById('navTitle').textContent = '发布视频';
+
+    // Set cover thumbnail from video frame
+    document.getElementById('desktopCoverThumb').src = desktopVideoObjectURL;
+
+    videoPreview.addEventListener('loadedmetadata', function() {
+      document.getElementById('selectedVideoDuration').textContent = '时长 ' + formatTime(videoPreview.duration);
+    }, { once: true });
+  }
+
+  function resetDesktopSelection() {
+    if (desktopVideoObjectURL) { URL.revokeObjectURL(desktopVideoObjectURL); desktopVideoObjectURL = null; }
+    desktopVideoFile = null;
+    document.getElementById('selectedVideoPreview').removeAttribute('src');
+    document.getElementById('selectedVideoCard').classList.remove('show');
+    document.getElementById('desktopPublishSection').style.display = 'none';
+    document.getElementById('uploadZone').style.display = '';
+    document.getElementById('selectedVideoName').textContent = '';
+    document.getElementById('selectedVideoDuration').textContent = '--';
+    document.getElementById('selectedVideoSize').textContent = '--';
+    document.getElementById('desktopCoverThumb').src = '';
+    document.getElementById('desktopInputDesc').value = '';
+    document.getElementById('desktopCharCount').textContent = '0/100';
+    document.getElementById('navTitle').textContent = '选择视频';
+  }
+
+  function formatFileSize(bytes) {
+    if (!bytes) return '--';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // ===== Desktop Publish =====
+  function publishVideoDesktop() {
+    if (!desktopVideoFile) { showToast('请先选择视频'); return; }
+    var btn = document.getElementById('desktopPublishBtn');
+    btn.disabled = true;
+    btn.textContent = '发布中...';
+    setTimeout(function() {
+      showToast('✅ 发布成功！');
+      setTimeout(function() {
+        if (desktopVideoObjectURL) URL.revokeObjectURL(desktopVideoObjectURL);
+        history.back();
+      }, 1000);
+    }, 800);
+  }
+
+  // ===== Mobile Select / Deselect =====
+  function toggleSelect(id) {
+    if (selectedVideoId === id) {
+      var prevCard = document.querySelector('.video-grid-item[data-id="' + id + '"]');
+      if (prevCard) prevCard.classList.remove('selected');
+      selectedVideoId = null;
+    } else {
+      if (selectedVideoId !== null) {
+        var oldCard = document.querySelector('.video-grid-item[data-id="' + selectedVideoId + '"]');
+        if (oldCard) oldCard.classList.remove('selected');
+      }
+      selectedVideoId = id;
+      var card = document.querySelector('.video-grid-item[data-id="' + id + '"]');
+      if (card) card.classList.add('selected');
+    }
+    updateNextBtn();
+  }
+
+  function updateNextBtn() {
+    var btn = document.getElementById('nextBtn');
+    var hasSelection = isDesktop() ? (desktopVideoFile !== null) : (selectedVideoId !== null);
+    if (hasSelection) { btn.classList.add('active'); btn.disabled = false; }
+    else { btn.classList.remove('active'); btn.disabled = true; }
+  }
+
+  // ===== Mobile Preview =====
+  function openPreview(id) {
+    var video = videoGallery.find(function(v) { return v.id === id; });
+    if (!video) return;
+    previewVideoId = id;
+    var videoEl = document.getElementById('previewVideo');
+    videoEl.src = getVideoSrc(id);
+    videoEl.currentTime = 0;
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('previewTime').textContent = '0:00 / ' + video.duration;
+    document.getElementById('previewPlayBtn').classList.remove('hidden');
+    document.getElementById('previewOverlay').classList.add('show');
+    setTimeout(function() {
+      videoEl.play().then(function() { document.getElementById('previewPlayBtn').classList.add('hidden'); updateProgressLoop(); }).catch(function() {});
+    }, 400);
+  }
+
+  function getVideoSrc(id) {
+    var videoMap = {
+      1: 'video/丞相府今日开饭.mp4', 2: 'video/打斗视频.mp4', 3: 'video/凤骨琉璃.mp4',
+      4: 'video/我卸甲后天下大乱了.mp4', 5: 'video/凤骨琉璃.mp4', 6: 'video/打斗视频.mp4',
+      7: 'video/我卸甲后天下大乱了.mp4', 8: 'video/丞相府今日开饭.mp4', 9: 'video/凤骨琉璃.mp4',
+      10: 'video/我卸甲后天下大乱了.mp4', 11: 'video/打斗视频.mp4', 12: 'video/丞相府今日开饭.mp4',
+    };
+    return videoMap[id] || 'video/凤骨琉璃.mp4';
+  }
+
+  var progressInterval = null;
+  function updateProgressLoop() {
+    var video = document.getElementById('previewVideo');
+    var fill = document.getElementById('progressFill');
+    var time = document.getElementById('previewTime');
+    if (progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(function() {
+      if (!video.duration) return;
+      fill.style.width = (video.currentTime / video.duration) * 100 + '%';
+      time.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+    }, 150);
+    video.addEventListener('ended', function() { document.getElementById('previewPlayBtn').classList.remove('hidden'); if (progressInterval) clearInterval(progressInterval); });
+    video.addEventListener('pause', function() { document.getElementById('previewPlayBtn').classList.remove('hidden'); });
+    video.addEventListener('play', function() { document.getElementById('previewPlayBtn').classList.add('hidden'); });
+  }
+
+  function togglePreviewPlay() {
+    var video = document.getElementById('previewVideo');
+    if (video.paused) video.play().catch(function() {});
+    else video.pause();
+  }
+
+  function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    var m = Math.floor(seconds / 60);
+    var s = Math.floor(seconds % 60);
+    return m + ':' + s.toString().padStart(2, '0');
+  }
+
+  function closePreview() {
+    var video = document.getElementById('previewVideo');
+    video.pause(); video.removeAttribute('src'); video.load();
+    if (progressInterval) clearInterval(progressInterval);
+    document.getElementById('previewOverlay').classList.remove('show');
+    document.getElementById('previewPlayBtn').classList.remove('hidden');
+    previewVideoId = null;
+  }
+
+  function goToEditorFromPreview() {
+    if (selectedVideoId === null && previewVideoId !== null) toggleSelect(previewVideoId);
+    if (selectedVideoId === null) { showToast('请先选择视频'); return; }
+    closePreview();
+    goToEditor();
+  }
+
+  // ===== Mobile: Go to Editor =====
+  function goToEditor() {
+    if (selectedVideoId === null) return;
+    var video = videoGallery.find(function(v) { return v.id === selectedVideoId; });
+    if (!video) return;
+    editVideo = video;
+    document.getElementById('galleryView').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('editorView').style.display = 'block';
+    document.getElementById('navTitle').textContent = '';
+    var publishBarBtn = document.getElementById('publishBarBtn');
+    publishBarBtn.classList.add('show');
+    publishBarBtn.disabled = false;
+    publishBarBtn.textContent = '发布';
+    document.getElementById('editorCover').src = video.cover;
+    document.getElementById('inputDesc').value = '';
+    bindCoverInput();
+  }
+
+  function openCoverPicker() { document.getElementById('coverInput').click(); }
+
+  function bindCoverInput() {
+    var input = document.getElementById('coverInput');
+    if (!input) return;
+    input.addEventListener('change', function(e) {
+      if (e.target.files.length === 0) return;
+      var file = e.target.files[0];
+      if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev) { document.getElementById('editorCover').src = ev.target.result; };
+      reader.readAsDataURL(file);
+      this.value = '';
+    });
+  }
+
+  document.getElementById('inputDesc').addEventListener('input', function() {
+    if (this.value.length > 100) { this.value = this.value.slice(0, 100); showToast('最多输入100字'); }
+  });
+
+  // ===== Back =====
+  function goBack() {
+    if (document.getElementById('editorView').style.display !== 'none') {
+      document.getElementById('editorView').style.display = 'none';
+      document.getElementById('galleryView').style.display = 'block';
+      document.getElementById('nextBtn').style.display = '';
+      document.getElementById('navTitle').textContent = '选择视频';
+      document.getElementById('publishBarBtn').classList.remove('show');
+      editVideo = null;
+    } else {
+      if (desktopVideoObjectURL) { URL.revokeObjectURL(desktopVideoObjectURL); desktopVideoObjectURL = null; }
+      if (window.history.length > 1) history.back();
+      else window.location.href = 'recommend.html';
+    }
+  }
+
+  // ===== Mobile Publish =====
+  function publishVideo() {
+    var btn = document.getElementById('publishBarBtn');
+    btn.disabled = true;
+    btn.textContent = '发布中...';
+    setTimeout(function() {
+      showToast('✅ 发布成功！');
+      setTimeout(function() { history.back(); }, 1000);
+    }, 800);
+  }
+
+  function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 2000);
+  }
+</script>
+<script src="load-sidebar.js"></script>
+<script src="load-desktop-header.js?v=3"></script>
+</body>
+</html>

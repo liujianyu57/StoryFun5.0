@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storyfun | 代币概览</title>
+  <link rel="stylesheet" href="admin-shared.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div id="admin-sidebar-placeholder"></div>
+  <div class="app-shell">
+    <div class="page-header">
+      <div>
+        <h1>📈 代币概览</h1>
+        <div class="sub">24h（最近完整 UTC 日）与 All-time 的发射 / Unique devs / 交易量；近 30 日趋势</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">24h 发射代币</div><div class="stat-value num" id="cV24"></div><div class="stat-sub">最近完整 UTC 日</div></div>
+      <div class="stat-card"><div class="stat-label">24h Unique devs</div><div class="stat-value num" id="cD24"></div><div class="stat-sub">当日去重发币用户</div></div>
+      <div class="stat-card"><div class="stat-label">24h 交易量 $</div><div class="stat-value num" id="cVol24"></div><div class="stat-sub">curve + 池内合计</div></div>
+      <div class="stat-card"><div class="stat-label">All-time 发射代币</div><div class="stat-value num" id="cVAll"></div><div class="stat-sub">累计</div></div>
+      <div class="stat-card"><div class="stat-label">All-time Unique devs</div><div class="stat-value num" id="cDAll"></div><div class="stat-sub">累计去重发币用户</div></div>
+      <div class="stat-card"><div class="stat-label">All-time 交易量 $</div><div class="stat-value num" id="cVolAll"></div><div class="stat-sub">curve + 池内合计</div></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="section-card" style="margin:0;">
+        <div class="card-title">近 30 日发射数量</div>
+        <div id="chartLaunch" class="chart-lg" style="height:300px;"></div>
+      </div>
+      <div class="section-card" style="margin:0;">
+        <div class="card-title">近 30 日成交量 $</div>
+        <div id="chartVol" class="chart-lg" style="height:300px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="load-admin-sidebar.js"></script>
+  <script src="admin-mock-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var M = window.SFMock; if (!M) return;
+      var P = M.protocol || {};
+      var LD = M.launchDaily || [], VD = M.volDaily || [];
+      function usd(n) {
+        n = Number(n) || 0;
+        if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+        if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+        return '$' + n.toFixed(0);
+      }
+      function num(n) { return (Number(n) || 0).toLocaleString('en-US'); }
+      function put(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+
+      put('cV24', num(P.launch24)); put('cD24', num(P.devs24)); put('cVol24', usd(P.vol24));
+      put('cVAll', num(P.launchAll)); put('cDAll', num(P.devsAll)); put('cVolAll', usd(P.volAll));
+      var PALETTE = ['#00b388', '#f5b042'];
+      function base() {
+        return {
+          color: PALETTE,
+          tooltip: { trigger: 'axis', confine: true },
+          legend: { top: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
+          grid: { left: 14, right: 20, top: 34, bottom: 4, containLabel: true },
+          xAxis: { type: 'category', axisLine: { lineStyle: { color: '#deeaf7' } }, axisTick: { show: false }, axisLabel: { fontSize: 10, color: '#8b8d98', interval: 2 } },
+          yAxis: { type: 'value', splitLine: { lineStyle: { color: '#eef3fa' } }, axisLabel: { fontSize: 10, color: '#8b8d98' } },
+        };
+      }
+      function chart(id) { var c = echarts.init(document.getElementById(id)); window.addEventListener('resize', function () { c.resize(); }); return c; }
+
+      chart('chartLaunch').setOption(Object.assign(base(), {
+        xAxis: Object.assign(base().xAxis, { data: LD.map(function (x) { return x.label; }) }),
+        series: [
+          { name: '发射', type: 'bar', barMaxWidth: 12, data: LD.map(function (x) { return x.value; }), itemStyle: { borderRadius: [4, 4, 0, 0] } },
+        ],
+      }), true);
+
+      chart('chartVol').setOption(Object.assign(base(), {
+        xAxis: Object.assign(base().xAxis, { data: VD.map(function (x) { return x.label; }) }),
+        yAxis: { type: 'value', splitLine: { lineStyle: { color: '#eef3fa' } }, axisLabel: { fontSize: 10, color: '#8b8d98', formatter: function (v) { return usd(v); } } },
+        series: [
+          { name: '成交量 $', type: 'line', smooth: true, showSymbol: false, data: VD.map(function (x) { return x.value; }), areaStyle: { opacity: 0.1 }, lineStyle: { width: 2 } },
+        ],
+      }), true);
+    })();
+  </script>
+</body>
+</html>

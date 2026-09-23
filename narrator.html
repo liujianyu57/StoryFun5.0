@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story.fun | 创作</title>
+  <style>
+    :root { --bg: #f7fbff; --surface: #ffffff; --accent: #000000; --accent-soft: rgba(0, 0, 0, 0.16); --text: #1a232f; --text-muted: #657586; --border: #e6eff7; --shadow: 0 20px 45px rgba(27, 45, 71, 0.08); font-family: "Segoe UI", Roboto, "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    .app-shell { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    .page-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; margin-bottom: 28px; }
+    .page-header-left { display: flex; flex-direction: column; gap: 4px; }
+    .page-header-left h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; line-height: 1.15; }
+    .page-header-left p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
+    .page-header-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: 999px; border: none; background: var(--accent); color: #fff; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0,0.3); }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .button, .button-secondary { border: none; cursor: pointer; border-radius: 999px; padding: 12px 20px; font-size: 0.95rem; transition: all 0.2s ease; text-decoration: none; }
+    .button { background: var(--accent); color: #fff; font-weight: 600; }
+    .button-secondary { background: rgba(15, 22, 42, 0.05); color: var(--text); }
+    .button:hover, .button-secondary:hover { transform: translateY(-1px); }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    .filter-pill { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); padding: 10px 16px; border-radius: 999px; cursor: pointer; font-size: 0.92rem; }
+    .filter-pill.active { background: var(--accent); color: #fff; border-color: transparent; }
+    .card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+
+    .card-list-item {
+      overflow: hidden; border-radius: 24px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(27, 45, 71, 0.06); display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); will-change: transform;
+    }
+    .card-list-item:hover { transform: translateY(-4px); box-shadow: 0 20px 45px rgba(27, 45, 71, 0.12); border-color: rgba(0, 0, 0, 0.20); }
+    .card-header { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #eaf4ee; }
+    .card-header img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .card-list-item:hover .card-header img { transform: scale(1.06); }
+    .card-header::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(26, 35, 47, 0.06) 100%); pointer-events: none; }
+    .card-header .badge-row { position: absolute; top: 14px; left: 14px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+
+    /* ===== Card Menu (右上角三点菜单) ===== */
+    .card-menu { position: absolute; top: 12px; right: 12px; z-index: 10; }
+    .card-menu-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(0,0,0,0.30); color: #fff; font-size: 1.2rem; cursor: pointer; display: grid; place-items: center; transition: all 0.2s ease; backdrop-filter: blur(4px); line-height: 1; padding: 0; }
+    .card-menu-btn:hover { background: rgba(0,0,0,0.50); transform: scale(1.08); }
+    .card-menu-dropdown { position: absolute; top: calc(100% + 4px); right: 0; min-width: 150px; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06); padding: 6px; opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.95); transition: all 0.2s ease; transform-origin: top right; }
+    .card-menu-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+    .card-menu-dropdown .menu-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 500; color: var(--text); cursor: pointer; transition: background 0.15s ease; white-space: nowrap; }
+    .card-menu-dropdown .menu-item:hover { background: rgba(0,0,0,0.04); }
+    .card-menu-dropdown .menu-item.danger { color: #f45b69; }
+    .card-menu-dropdown .menu-item.danger:hover { background: rgba(244,91,105,0.08); }
+    .card-menu-dropdown .menu-item .menu-icon { font-size: 1rem; flex-shrink: 0; }
+    .status-badge { padding: 6px 14px 6px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.02em; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+    .status-badge:hover { transform: scale(1.06); }
+    .status-pending { background: linear-gradient(135deg, #ff9f2c, #f59e0b); }
+    .status-approved { background: linear-gradient(135deg, #000000, #00c797); }
+    .status-rejected { background: linear-gradient(135deg, #f45b69, #e74c5a); }
+    .status-delisted { background: linear-gradient(135deg, #8e8e93, #6b6b70); }
+    .status-badge .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.7); flex-shrink: 0; animation: statusPulse 2s ease-in-out infinite; }
+    .status-approved .status-dot, .status-rejected .status-dot { animation: none; }
+    @keyframes statusPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); } }
+    .status-badge .hint-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.25); font-size: 0.6rem; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    .status-badge .hint-icon:hover { background: rgba(255,255,255,0.45); }
+
+    .toast-notification { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px); z-index: 9999; background: rgba(26, 35, 47, 0.95); backdrop-filter: blur(8px); color: #fff; padding: 16px 24px; border-radius: 16px; font-size: 0.92rem; line-height: 1.6; box-shadow: 0 12px 40px rgba(27, 45, 71, 0.25); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; opacity: 0; pointer-events: none; max-width: 420px; text-align: center; font-weight: 500; }
+    .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast-notification .toast-icon { display: inline-block; margin-right: 8px; font-size: 1.1rem; }
+
+    .card-body { padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .card-body h3 { margin: 0; font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+    .card-body .card-sub { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.82rem; margin-top: -4px; }
+    .card-body .card-sub .sub-divider { width: 3px; height: 3px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .props-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .props-pill { border-radius: 999px; background: #f4faf6; color: var(--accent); padding: 6px 12px; font-size: 0.82rem; font-weight: 600; border: 1px solid rgba(0, 0, 0, 0.12); display: inline-flex; align-items: center; gap: 4px; }
+    .card-action { padding: 16px 22px 18px; border-top: 1px solid var(--border); background: #fafcff; display: flex; gap: 10px; }
+    .card-action .button { flex: 1; padding: 11px 16px; font-size: 0.88rem; border-radius:999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .card-action .button .btn-icon { font-size: 0.95rem; }
+    .card-action .button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    .card-action .button-danger { background: transparent; color: #f45b69; border: 1px solid rgba(244, 91, 105, 0.25); font-weight: 600; }
+    .card-action .button-danger:hover { background: rgba(244, 91, 105, 0.06); transform: translateY(-1px); }
+
+    .modal-overlay { display: none; position: fixed; z-index: 1000; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 24px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border-radius: 32px; box-shadow: 0 40px 80px rgba(27,45,71,0.18); width: 100%; max-width: 720px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: modalIn 0.25s ease; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 28px 16px; border-bottom: 1px solid var(--border); }
+    .modal-header h3 { margin: 0; font-size: 1.35rem; }
+    .modal-header h2 { margin: 0; font-size: 1.45rem; }
+    .modal-close { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.04); cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; color: var(--text-muted); transition: all 0.2s; flex-shrink: 0; }
+    .modal-close:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+    .modal-body { padding: 20px 28px 28px; overflow-y: auto; flex: 1; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 28px; border-top: 1px solid var(--border); background: #fafcff; }
+    .modal-footer .button { padding: 10px 24px; }
+
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.4; }
+    .empty-state p { font-size: 1rem; line-height: 1.7; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .narrator-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding: 18px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow); }
+    .narrator-tab { border: none; background: transparent; color: var(--text); cursor: pointer; padding: 10px 18px; border-radius: 999px; font-size: 0.95rem; font-weight: 600; transition: background 0.2s ease; }
+    .narrator-tab.active { background: var(--accent-soft); color: var(--accent); }
+
+    /* ===== Video Card Styles ===== */
+    .video-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+    .video-card { border-radius: 24px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(27, 45, 71, 0.06); display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); will-change: transform; }
+    .video-card:hover { transform: translateY(-4px); box-shadow: 0 20px 45px rgba(27, 45, 71, 0.12); border-color: rgba(0, 0, 0, 0.20); }
+    .vc-cover-wrap { position: relative; overflow: hidden; aspect-ratio: 2 / 3; background: #eaf4ee; }
+    .vc-cover { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .video-card:hover .vc-cover { transform: scale(1.06); }
+    .vc-cover-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(26, 35, 47, 0.12) 100%); pointer-events: none; }
+    .vc-completion { position: absolute; bottom: 10px; left: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.72rem; font-weight: 500; z-index: 2; }
+    .vc-completion svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.9; stroke: #fff; }
+    .vc-duration { position: absolute; bottom: 10px; right: 12px; padding: 4px 8px; border-radius: 5px; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.72rem; font-weight: 500; z-index: 2; }
+    .vc-cover-wrap .badge-row { position: absolute; top: 14px; left: 14px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+    .vc-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .vc-body h4 { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.3; }
+    .vc-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.4em; }
+    @media (max-width: 1280px) { .video-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 1080px) { .video-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 680px) { .video-grid { grid-template-columns: 1fr; gap: 16px; } }
+
+    @media (max-width: 1280px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 1080px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 680px) {
+      .card-grid { grid-template-columns: 1fr; gap: 16px; }
+      .card-body { padding: 16px 18px 14px; }
+      .card-action { padding: 12px 18px 14px; flex-direction: column; }
+      .card-action .button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <section>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>创作</h1>
+          <p>短剧与视频的发布、审核与内容管理。</p>
+        </div>
+        <div class="page-header-actions">
+          <a class="btn-primary" href="publish.html">发布</a>
+        </div>
+      </div>
+      
+      <div class="narrator-tabs">
+        <button class="narrator-tab active" data-tab="tab1" onclick="switchTab('tab1', this)">短剧管理</button>
+        <button class="narrator-tab" data-tab="tab3" onclick="switchTab('tab3', this)">视频管理</button>
+      </div>
+
+      <div class="filter-row" id="filterRow">
+        <button class="filter-pill active" onclick="filterCards('all',this)">全部</button>
+        <button class="filter-pill" onclick="filterCards('approved',this)">已通过</button>
+        <button class="filter-pill" onclick="filterCards('pending',this)">审核中</button>
+        <button class="filter-pill" onclick="filterCards('rejected',this)">未通过</button>
+        <button class="filter-pill" onclick="filterCards('delisted',this)">已下架</button>
+      </div>
+
+      <div class="filter-row" id="videoFilterRow" style="display:none;">
+        <button class="filter-pill active" onclick="filterVideoCards('all',this)">全部</button>
+        <button class="filter-pill" onclick="filterVideoCards('approved',this)">已发布</button>
+        <button class="filter-pill" onclick="filterVideoCards('pending',this)">审核中</button>
+        <button class="filter-pill" onclick="filterVideoCards('rejected',this)">未通过</button>
+        <button class="filter-pill" onclick="filterVideoCards('delisted',this)">已下架</button>
+      </div>
+
+      <!-- Tab 1 -->
+      <div class="tab-content active" id="tab1">
+        <div class="card-grid" id="dramaGrid">
+          <article class="card-list-item" data-status="pending">
+            <div class="card-header">
+              <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt="长安如梦" />
+              <div class="badge-row">
+                <span class="status-badge status-pending">
+                  <span class="status-dot"></span> 审核中
+                </span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDelete('长安如梦')"><span class="menu-icon">🗑️</span> 删除短剧</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3>长安如梦</h3>
+              <div class="card-sub"><span>30 集 ｜ 一曲长歌诉尽长安繁华梦，宫廷权谋与爱恨纠葛</span></div>
+              <div class="props-row"><span class="props-pill">古装</span><span class="props-pill">爱情</span></div>
+            </div>
+            <div class="card-action" data-status="pending">
+              <button class="button" disabled><span class="btn-icon">⏳</span> 等待审核</button>
+            </div>
+          </article>
+
+          <article class="card-list-item" data-status="approved">
+            <div class="card-header">
+              <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=80" alt="江南烟雨" />
+              <div class="badge-row">
+                <span class="status-badge status-approved">
+                  <span class="status-dot"></span> 已通过
+                </span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDelete('江南烟雨')"><span class="menu-icon">🗑️</span> 删除短剧</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3>江南烟雨</h3>
+              <div class="card-sub"><span>24 集 ｜ 烟雨江南中一段凄美爱情故事，茶楼酒肆间的人间百态</span></div>
+              <div class="props-row"><span class="props-pill">古装</span><span class="props-pill">剧情</span></div>
+            </div>
+            <div class="card-action" data-status="approved">
+              <button class="button" style="flex:1;background:transparent;color:var(--accent);border:1px solid rgba(0, 0, 0,0.25);font-weight:600;" onclick="openEditDramaModal(this)"><span class="btn-icon">✏️</span> 编辑</button>
+            </div>
+          </article>
+
+          <article class="card-list-item" data-status="approved">
+            <div class="card-header">
+              <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=900&q=80" alt="星际迷航" />
+              <div class="badge-row">
+                <span class="status-badge status-approved">
+                  <span class="status-dot"></span> 已通过
+                </span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDelete('星际迷航')"><span class="menu-icon">🗑️</span> 删除短剧</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3>星际迷航</h3>
+              <div class="card-sub"><span>16 集 ｜ 浩瀚星空中的人类冒险传奇，探索未知的星际文明</span></div>
+              <div class="props-row"><span class="props-pill">科幻</span><span class="props-pill">冒险</span></div>
+            </div>
+            <div class="card-action" data-status="approved">
+              <button class="button" style="flex:1;background:transparent;color:var(--accent);border:1px solid rgba(0, 0, 0,0.25);font-weight:600;" onclick="openEditDramaModal(this)"><span class="btn-icon">✏️</span> 编辑</button>
+            </div>
+          </article>
+
+          <article class="card-list-item" data-status="rejected">
+            <div class="card-header">
+              <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=80" alt="迷雾之城" />
+              <div class="badge-row">
+                <span class="status-badge status-rejected" onclick="event.stopPropagation();showStatusReason('rejected','迷雾之城','包含敏感词汇')" style="cursor:pointer;">
+                  <span class="status-dot"></span> 未通过
+                </span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDelete('迷雾之城')"><span class="menu-icon">🗑️</span> 删除短剧</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3>迷雾之城</h3>
+              <div class="card-sub"><span>12 集 ｜ 迷雾笼罩的城市中隐藏着惊天秘密，真相扑朔迷离</span></div>
+              <div class="props-row"><span class="props-pill">悬疑</span><span class="props-pill">推理</span></div>
+            </div>
+            <div class="card-action">
+              <button class="button" style="flex:1;background:transparent;color:var(--accent);border:1px solid rgba(0, 0, 0,0.25);font-weight:600;" onclick="openEditDramaModal(this)"><span class="btn-icon">✏️</span> 编辑</button>
+            </div>
+          </article>
+
+          <article class="card-list-item" data-status="delisted">
+            <div class="card-header">
+              <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=80" alt="雪山传说" />
+              <div class="badge-row">
+                <span class="status-badge status-delisted" onclick="event.stopPropagation();showStatusReason('delisted','雪山传说','版权投诉')" style="cursor:pointer;">
+                  <span class="status-dot"></span> 已下架
+                </span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDelete('雪山传说')"><span class="menu-icon">🗑️</span> 删除短剧</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3>雪山传说</h3>
+              <div class="card-sub"><span>8 集 ｜ 雪域高原上流传千年的神秘传说，探险者追寻真相之路</span></div>
+              <div class="props-row"><span class="props-pill">冒险</span><span class="props-pill">悬疑</span></div>
+            </div>
+            <div class="card-action">
+              <button class="button" style="flex:1;background:transparent;color:var(--text-muted);border:1px solid rgba(101,117,134,0.25);font-weight:600;" disabled><span class="btn-icon">🚫</span> 已下架</button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Tab 3: 视频管理 -->
+      <div class="tab-content" id="tab3">
+        <div class="video-grid" id="videoGrid">
+          <article class="video-card" data-status="approved">
+            <div class="vc-cover-wrap">
+              <img class="vc-cover" src="image/chengxiangfu_cover.jpg" alt="打斗精彩片段" />
+              <span class="vc-completion"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5.5 7-5.5 7 5.5 7 5.5-2.5 5.5-7 5.5-7-5.5-7-5.5z"/><circle cx="8" cy="8" r="2"/></svg>3.2万</span>
+              <span class="vc-duration">02:15</span>
+              <div class="badge-row">
+                <span class="status-badge status-approved"><span class="status-dot"></span> 已发布</span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item" onclick="event.stopPropagation();openEditVideo('打斗精彩片段','image/chengxiangfu_cover.jpg','精彩打斗场面合集，拳拳到肉的视觉盛宴','EVA','approved')"><span class="menu-icon">✏️</span> 编辑</div>
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDeleteVideo('打斗精彩片段')"><span class="menu-icon">🗑️</span> 删除视频</div>
+                </div>
+              </div>
+            </div>
+            <div class="vc-body">
+              <h4>打斗精彩片段</h4>
+              <div class="vc-desc">精彩打斗场面合集，拳拳到肉的视觉盛宴</div>
+            </div>
+          </article>
+
+          <article class="video-card" data-status="pending">
+            <div class="vc-cover-wrap">
+              <img class="vc-cover" src="image/xiejia_cover.jpg" alt="丞相府花絮" />
+              <span class="vc-duration">05:30</span>
+              <div class="badge-row">
+                <span class="status-badge status-pending"><span class="status-dot"></span> 审核中</span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item" onclick="event.stopPropagation();openEditVideo('丞相府花絮','image/xiejia_cover.jpg','丞相府拍摄幕后花絮，揭秘剧中趣味瞬间','LENS','pending')"><span class="menu-icon">✏️</span> 编辑</div>
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDeleteVideo('丞相府花絮')"><span class="menu-icon">🗑️</span> 删除视频</div>
+                </div>
+              </div>
+            </div>
+            <div class="vc-body">
+              <h4>丞相府花絮</h4>
+              <div class="vc-desc">丞相府拍摄幕后花絮，揭秘剧中趣味瞬间</div>
+            </div>
+          </article>
+
+          <article class="video-card" data-status="approved">
+            <div class="vc-cover-wrap">
+              <img class="vc-cover" src="image/fenggu_cover.jpg" alt="凤骨琉璃·预告" />
+              <span class="vc-completion"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5.5 7-5.5 7 5.5 7 5.5-2.5 5.5-7 5.5-7-5.5-7-5.5z"/><circle cx="8" cy="8" r="2"/></svg>8.1万</span>
+              <span class="vc-duration">01:45</span>
+              <div class="badge-row">
+                <span class="status-badge status-approved"><span class="status-dot"></span> 已发布</span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item" onclick="event.stopPropagation();openEditVideo('凤骨琉璃·预告','image/fenggu_cover.jpg','凤骨琉璃正式预告片，苏婉清初入宫廷惊艳亮相','JACK','approved')"><span class="menu-icon">✏️</span> 编辑</div>
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDeleteVideo('凤骨琉璃·预告')"><span class="menu-icon">🗑️</span> 删除视频</div>
+                </div>
+              </div>
+            </div>
+            <div class="vc-body">
+              <h4>凤骨琉璃·预告</h4>
+              <div class="vc-desc">凤骨琉璃正式预告片，苏婉清初入宫廷惊艳亮相</div>
+            </div>
+          </article>
+
+          <article class="video-card" data-status="rejected">
+            <div class="vc-cover-wrap">
+              <img class="vc-cover" src="image/cover-zero-night.jpg" alt="卸甲·删减片段" />
+              <span class="vc-duration">03:20</span>
+              <div class="badge-row">
+                <span class="status-badge status-rejected" onclick="event.stopPropagation();showStatusReason('rejected','卸甲·删减片段','包含违规内容')" style="cursor:pointer;"><span class="status-dot"></span> 未通过</span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item" onclick="event.stopPropagation();openEditVideo('卸甲·删减片段','image/cover-zero-night.jpg','《我卸甲后天下大乱了》未播出片段，包含违规内容未通过审核','EVA','rejected')"><span class="menu-icon">✏️</span> 编辑</div>
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDeleteVideo('卸甲·删减片段')"><span class="menu-icon">🗑️</span> 删除视频</div>
+                </div>
+              </div>
+            </div>
+            <div class="vc-body">
+              <h4>卸甲·删减片段</h4>
+              <div class="vc-desc">《我卸甲后天下大乱了》未播出片段，包含违规内容未通过审核</div>
+            </div>
+          </article>
+
+          <article class="video-card" data-status="delisted">
+            <div class="vc-cover-wrap">
+              <img class="vc-cover" src="image/cover-allin.jpg" alt="零夜·旧版" />
+              <span class="vc-duration">04:10</span>
+              <div class="badge-row">
+                <span class="status-badge status-delisted" onclick="event.stopPropagation();showStatusReason('delisted','零夜·旧版','版权原因已下架')" style="cursor:pointer;"><span class="status-dot"></span> 已下架</span>
+              </div>
+              <div class="card-menu">
+                <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu(this)">⋯</button>
+                <div class="card-menu-dropdown">
+                  <div class="menu-item" onclick="event.stopPropagation();openEditVideo('零夜·旧版','image/cover-allin.jpg','零夜序章旧版视频，因版权原因已下架','CYPHER','delisted')"><span class="menu-icon">✏️</span> 编辑</div>
+                  <div class="menu-item danger" onclick="event.stopPropagation();confirmDeleteVideo('零夜·旧版')"><span class="menu-icon">🗑️</span> 删除视频</div>
+                </div>
+              </div>
+            </div>
+            <div class="vc-body">
+              <h4>零夜·旧版</h4>
+              <div class="vc-desc">零夜序章旧版视频，因版权原因已下架</div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status Reason Modal -->
+    <div class="modal-overlay" id="statusReasonModal">
+      <div class="modal" style="max-width: 440px;">
+        <div class="modal-header">
+          <h3 id="statusReasonTitle">状态说明</h3>
+          <button class="modal-close" onclick="closeStatusReasonModal()">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 24px 28px;">
+          <div style="padding:18px 20px;border-radius:16px;background:#f8fbff;border:1px solid #eef4ff;line-height:1.7;">
+            <p id="statusReasonText" style="margin:0;color:var(--text-muted);font-size:0.95rem;line-height:1.7;"></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="button-secondary" onclick="closeStatusReasonModal()">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-notification" id="toastNotification">
+      <span class="toast-icon">💡</span>
+      <span id="toastMessage"></span>
+    </div>
+
+  <script>
+    let toastTimer = null;
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toast || !msgEl) return;
+      msgEl.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.narrator-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      const filterRow = document.getElementById('filterRow');
+      const videoFilterRow = document.getElementById('videoFilterRow');
+      if (tabId === 'tab1') {
+        filterRow.style.display = 'flex';
+        videoFilterRow.style.display = 'none';
+      } else {
+        filterRow.style.display = 'none';
+        videoFilterRow.style.display = 'flex';
+      }
+    }
+
+    function filterCards(filter, btn) {
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#dramaGrid .card-list-item').forEach(card => {
+        const status = card.dataset.status;
+        card.style.display = (filter === 'all' || status === filter) ? '' : 'none';
+      });
+    }
+
+    // === 右上角菜单切换 ===
+    function toggleCardMenu(btn) {
+      const dropdown = btn.parentElement.querySelector('.card-menu-dropdown');
+      if (!dropdown) return;
+      const isOpen = dropdown.classList.contains('show');
+      // 关闭所有菜单
+      document.querySelectorAll('.card-menu-dropdown.show').forEach(d => d.classList.remove('show'));
+      // 如果当前菜单是关闭的，打开它
+      if (!isOpen) dropdown.classList.add('show');
+    }
+
+    // 点击页面其他地方关闭菜单
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.card-menu')) {
+        document.querySelectorAll('.card-menu-dropdown.show').forEach(d => d.classList.remove('show'));
+      }
+    });
+
+    function confirmDelete(title) {
+      if (confirm(`确定要删除「${title}」吗？删除后将不可恢复。`)) {
+        const cards = document.querySelectorAll('#dramaGrid .card-list-item');
+        for (const card of cards) {
+          const h3 = card.querySelector('.card-body h3');
+          if (h3 && h3.textContent.trim() === title) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 300);
+            break;
+          }
+        }
+      }
+    }
+
+    function filterVideoCards(filter, btn) {
+      document.querySelectorAll('#videoFilterRow .filter-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#videoGrid .video-card').forEach(card => {
+        const status = card.dataset.status;
+        card.style.display = (filter === 'all' || status === filter) ? '' : 'none';
+      });
+    }
+
+    function openEditVideo(title, cover, desc, author, status) {
+      location.href = 'edit-video.html?title=' + encodeURIComponent(title) +
+        '&cover=' + encodeURIComponent(cover) +
+        '&desc=' + encodeURIComponent(desc) +
+        '&author=' + encodeURIComponent(author) +
+        '&status=' + encodeURIComponent(status);
+    }
+
+    function confirmDeleteVideo(title) {
+      if (confirm(`确定要删除「${title}」吗？删除后将不可恢复。`)) {
+        const cards = document.querySelectorAll('#videoGrid .video-card');
+        for (const card of cards) {
+          const h4 = card.querySelector('.vc-body h4');
+          if (h4 && h4.textContent.trim() === title) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 300);
+            break;
+          }
+        }
+      }
+    }
+
+    function openEditDramaModal(btn) {
+      const card = btn.closest('.card-list-item');
+      if (!card) return;
+      const title = card.querySelector('.card-body h3').textContent.trim();
+      window.location.href = 'edit-drama.html?title=' + encodeURIComponent(title);
+    }
+
+    // === 状态原因弹窗 ===
+    const statusReasonModal = document.getElementById('statusReasonModal');
+
+    function showStatusReason(type, title, reason) {
+      const text = document.getElementById('statusReasonText');
+      const titleEl = document.getElementById('statusReasonTitle');
+
+      if (type === 'rejected') {
+        titleEl.textContent = '⚠️ 未通过';
+      } else if (type === 'delisted') {
+        titleEl.textContent = '🚫 已下架';
+      }
+      text.textContent = reason;
+      statusReasonModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeStatusReasonModal() {
+      statusReasonModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    statusReasonModal.addEventListener('click', function(e) { if (e.target === this) closeStatusReasonModal(); });
+
+    // === 统一 Escape 键关闭所有弹窗 ===
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      const overlays = [
+        { el: document.getElementById('statusReasonModal'), close: closeStatusReasonModal },
+      ];
+      for (const { el, close } of overlays) {
+        if (el && el.classList.contains('open')) {
+          e.preventDefault();
+          close();
+          break;
+        }
+      }
+    });
+
+  </script>
+
+  <div id="bottom-nav-placeholder"></div>
+  <script src="load-sidebar.js"></script>
+<script src="load-desktop-header.js?v=3"></script>
+  <script src="auth.js"></script>
+  <script src="load-bottom-nav.js"></script>
+  </div>
+</body>
+</html>

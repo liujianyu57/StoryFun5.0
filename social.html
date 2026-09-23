@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>社交关系 — Story.fun</title>
+  <style>
+    :root {
+      --bg: #f5faff;
+      --surface: #ffffff;
+      --accent: #000000;
+      --accent-soft: rgba(0, 0, 0,0.10);
+      --text: #13202e;
+      --text-muted: #6e859e;
+      --text-sub: #8b8d98;
+      --border: #deeaf7;
+      --border-light: #e8f0fa;
+      --radius: 16px;
+      font-family: -apple-system, "PingFang SC", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+
+    /* Desktop Header */
+    .desktop-header{position:fixed;top:0;left:0;right:0;justify-content:flex-end;z-index:151;height:56px;padding:0 20px;display:none;align-items:center;gap:12px;background:#fff;border-bottom:1px solid rgba(0,0,0,0.06)}
+    .desktop-header .dh-search{position:absolute;left:50%;transform:translateX(-50%);width:520px;min-width:0;display:flex;align-items:center;gap:8px;padding:4px 14px;border-radius:999px;background:rgba(0,0,0,0.04);border:1px solid transparent;transition:all .2s}
+    .desktop-header .dh-search:focus-within{border-color:#000000;box-shadow:0 0 0 3px rgba(0, 0, 0,.12)}
+    .desktop-header .dh-search svg{width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.35)}
+    .desktop-header .dh-search input{flex:1;border:none;outline:none;background:none;font-size:13px;color:#13202e;font-family:inherit}
+    .desktop-header .dh-search input::placeholder{color:rgba(0,0,0,0.35)}.dh-search-dropdown{display:none;position:absolute;left:0;right:0;top:100%;margin-top:6px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.1);border:1px solid rgba(0,0,0,.06);padding:16px;z-index:200;max-height:360px;overflow-y:auto}.dh-search-dropdown.show{display:block}.dh-search-dropdown .sd-section{margin-bottom:14px}.dh-search-dropdown .sd-section:last-child{margin-bottom:0}.dh-search-dropdown .sd-section-title{font-size:12px;font-weight:600;color:#5e6f83;margin-bottom:8px}.dh-search-dropdown .sd-tags{display:flex;flex-wrap:wrap;gap:6px}.dh-search-dropdown .sd-tag{padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.04);font-size:12px;color:#13202e;cursor:pointer;transition:all .15s;border:none;font-family:inherit}.dh-search-dropdown .sd-tag:hover{background:rgba(0, 0, 0,.1);color:#000000}.dh-search-dropdown .sd-list{display:flex;flex-direction:column;gap:2px}.dh-search-dropdown .sd-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;font-size:13px;color:#13202e;cursor:pointer;transition:background .1s}.dh-search-dropdown .sd-item:hover{background:rgba(0,0,0,.03)}.dh-search-dropdown .sd-item .sd-del{color:#5e6f83;font-size:11px;padding:2px 6px;border-radius:4px;cursor:pointer;border:none;background:none}.dh-search-dropdown .sd-item .sd-del:hover{color:#f45b69}.desktop-header .dh-search-btn{padding:3px 12px;height:auto;border-radius:999px;border:none;background:rgba(0,0,0,.06);color:rgba(0,0,0,.5);border:1px solid transparent;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-right:-4px}.desktop-header .dh-search-btn:hover{background:#000000;color:#fff;border-color:#000000}
+    .desktop-header .dh-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:none;color:rgba(0,0,0,0.55);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;flex-shrink:0}
+    .desktop-header .dh-icon-btn:hover{background:rgba(0,0,0,0.06);color:#13202e}
+    .desktop-header .dh-icon-btn svg{width:20px;height:20px}
+    .desktop-header .dh-notify-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#ff2d55;border:1.5px solid #fff}
+    .desktop-header .auth-container{display:flex;align-items:center}
+    .desktop-header .auth-login-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:999px;border:1px solid rgba(0,0,0,0.15);background:#fff;color:#13202e;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
+    .desktop-header .auth-login-btn:hover{border-color:#000000;color:#000000;background:rgba(0, 0, 0,0.08)}
+    @media(min-width:769px){.desktop-header{left:160px;right:0;display:flex}body{padding-top:56px}}
+    @media(max-width:768px){.desktop-header{display:none}}
+
+    .app-shell { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-bottom: 12px; margin-top: 8px; padding: 8px 16px; position: relative; z-index: 1;
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--text-secondary); text-decoration: none;
+      border-radius:999px; background: var(--surface);
+      border: 1px solid var(--border-light);
+      transition: all 0.2s ease;
+    }
+    .back-btn:hover { background: var(--accent-soft); color: var(--accent); }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(0,0,0,0.03);
+      border-radius: 12px;
+      padding: 3px;
+      width: fit-content;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-item {
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.25s;
+      background: none;
+      border: none;
+      border-radius:999px;
+      flex-shrink: 0;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-item.active {
+      background: var(--surface);
+      color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* User list */
+    .user-list {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    .user-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .user-item:last-child { border-bottom: none; }
+    .user-item:hover { background: rgba(0,0,0,0.02); }
+    .user-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name-row { display: flex; align-items: center; gap: 8px; }
+    .user-name { font-size: 15px; font-weight: 600; color: var(--text); }
+    .user-badge {
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .user-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .follow-btn {
+      flex-shrink: 0;
+      padding: 7px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .follow-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .follow-btn.followed { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    @media (max-width: 760px) {
+      .app-shell { padding: 12px; }
+      .user-item { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="app-shell">
+  <a href="javascript:history.back()" class="back-btn">← 返回</a>
+  <div class="tab-bar">
+    <button class="tab-item active" data-tab="following" onclick="switchTab('following')">关注</button>
+    <button class="tab-item" data-tab="followers" onclick="switchTab('followers')">粉丝</button>
+    <button class="tab-item" data-tab="mutual" onclick="switchTab('mutual')">互关</button>
+  </div>
+
+  <div class="user-list" id="userList"></div>
+</div>
+
+<script src="auth.js"></script>
+<script src="load-sidebar.js"></script>
+<script src="load-desktop-header.js?v=3"></script>
+<script src="load-bottom-nav.js"></script>
+
+<script>
+// Mock user data for each tab
+var DATA = {
+  following: [
+    { name:'清风明月', desc:'白天写代码，晚上剪视频，喜欢在故事里寻找共鸣。', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80', followed:true },
+    { name:'苏婉清', desc:'喜欢古风文化和汉服，周末会去城东的市集摆摊。', avatar:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80', followed:true },
+    { name:'EVA', desc:'自由插画师，偶尔接点外包，追剧比追番认真。', avatar:'https://images.unsplash.com/photo-1457449940276-e8deed18bfff?w=100&q=80', followed:true },
+    { name:'李云飞', desc:'健身教练转行做自媒体，正在拍一部动作短剧。', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80', followed:true },
+    { name:'NOVA', desc:'技术宅一枚，喜欢科幻片和撸猫。最近在学AI创作。', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', followed:true },
+    { name:'LENS', desc:'全职宝妈，趁娃睡着写剧本，已经发了十多部了。', avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80', followed:true },
+    { name:'CYPHER', desc:'大三学生，用课余时间写了三季代码风暴的故事。', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80', followed:true },
+    { name:'ROSE', desc:'花店老板，用卖花的钱拍爱情短剧。', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80', followed:true },
+    { name:'DREAMER', desc:'社恐患者，喜欢一个人闷头写悬疑故事。', avatar:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80', followed:true },
+    { name:'BULL', desc:'期货交易员，经历过市场的起落，现在转型做金融知识科普。', avatar:'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=100&q=80', followed:true },
+    { name:'SMILE', desc:'脱口秀演员，把段子写成了短剧，意外火了。', avatar:'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80', followed:true },
+    { name:'STELLAR', desc:'天文爱好者，经常凌晨三点在楼顶拍星轨。', avatar:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&q=80', followed:true }
+  ],
+  followers: [
+    { name:'清风明月', desc:'独立创作者｜短剧导演', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80', followed:false },
+    { name:'林梦瑶', desc:'推理小说迷，家里堆了三百多本阿婆和东野圭吾。', avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80', followed:true },
+    { name:'赵无极', desc:'武术教练，带学生参加全国比赛，顺带在短剧里客串。', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', followed:true },
+    { name:'上官婉儿', desc:'语文老师转行短视频编剧，正在学怎么用AI写脚本。', avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80', followed:false },
+    { name:'Luna', desc:'在读研究生，研究AI伦理，也在AI短剧上小有名气。', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80', followed:true },
+    { name:'NOVA', desc:'科幻短剧导演｜时间管理局', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', followed:false },
+    { name:'SMILE', desc:'喜剧短剧·笑面人生', avatar:'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80', followed:false },
+    { name:'DREAMER', desc:'悬疑短剧·第七层梦境', avatar:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80', followed:false }
+  ],
+  mutual: [
+    { name:'清风明月', desc:'独立创作者｜短剧导演', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80', followed:true },
+    { name:'李云飞', desc:'短剧创作者｜动作冒险', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80', followed:true },
+    { name:'林梦瑶', desc:'悬疑短剧创作者｜推理迷', avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80', followed:true },
+    { name:'赵无极', desc:'武术指导｜短剧演员', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', followed:true },
+    { name:'Luna', desc:'AI科技博主｜短剧达人', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80', followed:true },
+    { name:'EVA', desc:'我卸甲后天下大乱了·创作者', avatar:'https://images.unsplash.com/photo-1457449940276-e8deed18bfff?w=100&q=80', followed:true }
+  ]
+};
+
+var currentTab = 'following';
+
+function renderList() {
+  var list = DATA[currentTab];
+  var html = '';
+  list.forEach(function(u) {
+    html += '<div class="user-item" onclick="location.href=\'user-profile-visitor.html?author='+encodeURIComponent(u.name)+'\'">' +
+      '<img class="user-avatar" src="'+u.avatar+'" alt="'+u.name+'" onerror="this.style.display=\'none\'">' +
+      '<div class="user-info">' +
+        '<div class="user-name-row"><span class="user-name">'+u.name+'</span>'+
+        (u.followed && currentTab !== 'following' && currentTab !== 'followers' && currentTab !== 'mutual' ? '<span class="user-badge">互关</span>' : '') +
+        '</div>' +
+        '<div class="user-desc">'+u.desc+'</div>' +
+      '</div>' +
+      (currentTab === 'followers'
+        ? '<div style="display:flex;gap:8px;flex-shrink:0">' +
+            '<button class="follow-btn'+(u.followed?'':' followed')+'" onclick="event.stopPropagation();toggleFollow(this,\''+u.name+'\')">'+
+              (u.followed ? '已互关' : '回关') +
+            '</button>' +
+            '<button class="follow-btn" style="color:var(--text-muted);border-color:var(--border)" onclick="event.stopPropagation();removeFollower(\''+u.name+'\')">移除</button>' +
+          '</div>'
+        : (currentTab !== 'mutual'
+            ? '<button class="follow-btn'+(u.followed?' followed':'')+'" onclick="event.stopPropagation();toggleFollow(this,\''+u.name+'\')">'+
+                (u.followed ? '已关注' : '关注') +
+              '</button>'
+            : '')
+      ) +
+    '</div>';
+  });
+  document.getElementById('userList').innerHTML = html;
+}
+
+function toggleFollow(btn, name) {
+  var isFollowed = btn.classList.contains('followed');
+  var list = DATA[currentTab];
+  var user = list.find(function(u){ return u.name === name; });
+  if (user) user.followed = !isFollowed;
+  btn.classList.toggle('followed');
+  btn.textContent = btn.classList.contains('followed') ? '已关注' : '关注';
+}
+
+function removeFollower(name) {
+  var list = DATA[currentTab];
+  var idx = list.findIndex(function(u){ return u.name === name; });
+  if (idx !== -1) list.splice(idx, 1);
+  renderList();
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-item').forEach(function(t){
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  renderList();
+  history.replaceState(null, '', '?tab='+tab);
+}
+
+// Init from URL
+var params = new URLSearchParams(window.location.search);
+var initialTab = params.get('tab');
+if (initialTab && ['following','followers','mutual'].indexOf(initialTab) !== -1) {
+  currentTab = initialTab;
+  document.querySelectorAll('.tab-item').forEach(function(t){
+    t.classList.toggle('active', t.dataset.tab === initialTab);
+  });
+}
+renderList();
+</script>
+<script src="search.js"></script>
+</body>
+</html>

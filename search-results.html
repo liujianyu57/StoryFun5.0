@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>搜索结果 - Story.fun</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f7fa;--surface:#ffffff;--accent:#000000;--text:#1d1d1f;--text-muted:#86868b;--border:rgba(0,0,0,.08);font-family:-apple-system,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif}
+html,body{width:100%;height:100%;background:var(--bg);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-font-smoothing:antialiased}
+body{padding-bottom:50px;padding-bottom:calc(50px + env(safe-area-inset-bottom,0))}
+.shell{max-width:480px;margin:0 auto}
+/* Top bar */
+.top-bar{padding:0 16px;padding-top:calc(12px + env(safe-area-inset-top,0));background:var(--surface);position:sticky;top:0;z-index:10;border-bottom:.5px solid var(--border)}
+.search-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.search-back{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.search-back:active{background:rgba(0, 0, 0,.08)}
+.search-back svg{width:20px;height:20px;stroke:var(--accent)}
+.search-field{flex:1;display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f5f7fa;border-radius:12px;border:1.5px solid transparent;transition:border-color .25s,box-shadow .25s}
+.search-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(0, 0, 0,.08);background:var(--surface)}
+.search-field svg{width:16px;height:16px;flex-shrink:0;color:var(--text-muted)}
+.search-field input{flex:1;border:none;background:none;font-size:15px;color:var(--text);outline:none;font-family:inherit}
+.search-field input::placeholder{color:#c7c7cc}
+.search-clear{width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.06);border:none;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;visibility:hidden}
+.search-clear.show{visibility:visible}
+
+/* Tabs */
+.tab-bar{display:flex;gap:0;padding:0 16px;background:var(--surface);position:sticky;top:56px;top:calc(56px + env(safe-area-inset-top,0));z-index:9;border-bottom:.5px solid var(--border)}
+.tab-item{flex:1;text-align:center;padding:11px 0 10px;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;font-family:inherit}
+.tab-item.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab-count{font-size:11px;color:var(--text-muted);margin-left:3px}
+.tab-item.active .tab-count{color:var(--accent)}
+/* 代币页签：复用市场页卡片（launch-card.js） */
+.token-grid-wrap{padding:2px 0 8px}
+.px-load-more{display:block;margin:20px auto 6px;padding:11px 30px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.px-load-more:hover{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.16)}
+.px-load-more:active{transform:scale(.98)}
+.token-sum{font-size:12.5px;color:var(--text-muted);margin:2px 0 12px;overflow-wrap:anywhere}
+
+/* Results container */
+.results{padding:12px 16px}
+.result-card{display:flex;gap:12px;padding:12px;border-radius:14px;background:var(--surface);margin-bottom:10px;cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.result-card:active{transform:scale(.98);background:rgba(0,0,0,.02)}
+.result-card .rc-cover{width:72px;height:100px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#e5e5ea}
+.result-card .rc-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.result-card .rc-title{font-size:16px;font-weight:600;color:var(--text);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result-card .rc-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.result-card .rc-tag{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:500;background:rgba(0, 0, 0,.08);color:var(--accent)}
+.result-card .rc-rating{font-size:12px;color:#f5a623;font-weight:600}
+.result-card .rc-rating .star{color:#f5a623}
+.result-card .rc-ep{font-size:12px;color:var(--text-muted)}
+.result-card .rc-desc{font-size:12px;color:var(--text-muted);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* User card (左右布局, 桌面端2列) */
+.user-list{display:flex;flex-direction:column;gap:10px;padding:12px 16px}
+.user-list .user-card{max-width:100%}
+@media(min-width:769px){.user-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+.user-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--surface);cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.user-card:active{transform:scale(.98)}
+.user-card .uc-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e5e5ea;border:2px solid rgba(0,0,0,.06)}
+.user-card .uc-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.user-card .uc-name{font-size:15px;font-weight:600;color:var(--text)}
+.user-card .uc-bio{font-size:12px;color:var(--text-muted);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-card .uc-stats{display:flex;gap:10px;font-size:11px;color:var(--text-muted)}
+.user-card .uc-stats strong{font-weight:600;color:var(--text)}
+.user-card .uc-follow-btn{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:var(--accent);color:#fff;transition:all .2s;flex-shrink:0;font-family:inherit}
+.user-card .uc-follow-btn:active{opacity:.7}
+.user-card .uc-follow-btn.followed{background:rgba(0,0,0,.08);color:var(--text)}
+
+/* Drama grid (短剧卡片) */
+.drama-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 16px}
+@media(min-width:769px){.drama-gallery{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}}
+
+/* Video grid */
+.video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 16px}
+@media(min-width:769px){.video-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}}
+.video-card{border-radius:18px;overflow:hidden;background:var(--surface);cursor:pointer;box-shadow:0 2px 12px rgba(27,45,71,.06);border:1px solid var(--border);transition:all .3s}
+.video-card:hover{transform:translateY(-5px);box-shadow:0 4px 20px rgba(27,45,71,.1)}
+.video-card .vc-cover-wrap{position:relative;overflow:hidden}
+.video-card .vc-cover{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+.video-card .vc-likes{position:absolute;bottom:8px;left:8px;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:500;z-index:1}
+.video-card .vc-likes svg{width:12px;height:12px;fill:#fff}
+.video-card .vc-duration{position:absolute;bottom:8px;right:8px;padding:3px 7px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:500;z-index:1}
+.video-card .vc-body{padding:10px 12px 12px}
+.video-card .vc-desc{font-size:12px;color:var(--text-muted);line-height:1.4;min-height:33.6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:6px}
+.video-card .vc-meta-row{display:flex;align-items:center;justify-content:space-between}
+.video-card .vc-author{font-size:12px;color:var(--text-muted)}
+.video-card .vc-published{font-size:11px;color:var(--text-muted)}
+
+/* Empty state */
+.empty-state{padding:60px 20px;text-align:center;color:var(--text-muted);font-size:15px;display:none}
+.empty-state svg{width:48px;height:48px;margin-bottom:16px;color:#c7c7cc}
+.empty-state.show{display:block}
+
+/* Bottom Nav */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:100;height:50px;padding-bottom:env(safe-area-inset-bottom,0);background:rgba(255,255,255,.88);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-top:.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center}
+.bnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;height:100%;padding:4px 4px 2px;text-decoration:none;color:rgba(0,0,0,.45);transition:color .2s;-webkit-tap-highlight-color:transparent}
+.bnav a.active{color:var(--accent)}
+.bnav svg{width:28px;height:28px;display:block;flex-shrink:0}
+.bnav span{font-weight:400;font-size:10px;line-height:12px;letter-spacing:.008em;text-align:center}
+.desktop-back{display:none}
+@media(min-width:769px){.bnav{display:none}body{background:#fff;padding-bottom:0}.shell{max-width:none;width:100%;padding-top:80px;background:#fff;position:relative;overflow-x:hidden}.top-bar{display:none}.tab-bar{max-width:1440px;margin:0 auto;top:0}.desktop-back{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.06);color:var(--text-muted);cursor:pointer;position:fixed;top:8px;left:24px;z-index:152;transition:all .2s}.desktop-back:hover{background:rgba(0,0,0,.12);color:var(--text)}.desktop-back svg{width:20px;height:20px}.results{max-width:1440px;margin:0 auto;padding:12px 16px}.result-card,.user-card{max-width:1440px;margin-left:auto;margin-right:auto;width:100%}.drama-gallery{max-width:1440px;margin:0 auto;padding:12px 16px}.video-grid{max-width:1440px;margin:0 auto;padding:12px 16px}.empty-state{max-width:1440px;margin:0 auto}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <a class="desktop-back" href="index.html" title="返回">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </a>
+  <div class="top-bar">
+    <div class="search-row">
+      <button class="search-back" onclick="location.href='index.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="search-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input id="searchInput" type="text" placeholder="搜索有趣的内容" />
+        <button class="search-clear" id="searchClear">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-item active" data-tab="token">代币<span class="tab-count" id="cntToken"></span></button>
+    <button class="tab-item" data-tab="drama">短剧<span class="tab-count" id="cntDrama"></span></button>
+    <button class="tab-item" data-tab="video">视频<span class="tab-count" id="cntVideo"></span></button>
+    <button class="tab-item" data-tab="user">用户<span class="tab-count" id="cntUser"></span></button>
+  </div>
+
+  <div class="results" id="results"></div>
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <div id="emptyText">未找到相关结果</div>
+  </div>
+</div>
+
+<script src="launch-coin.js"></script>
+<script src="launch-card.js"></script>
+<script src="drama-card.js"></script>
+<script>
+var DATA = [
+  {id:'001',title:'凤骨琉璃',cat:'古风',rt:4.6,ep:'全44集',totalEp:44,author:'JACK',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',cover:'image/fenggu_cover.jpg',video:'video/凤骨琉璃.mp4',likes:33300,cmts:890,desc:'一曲凤骨琉璃，半世浮华若梦。权谋与红颜交织的古风传奇。',certType:'official'},
+  {id:'002',title:'我卸甲后天下大乱了',cat:'古风',rt:4.4,ep:'全12集',totalEp:12,author:'EVA',avatar:'https://images.unsplash.com/photo-1457449940276-e8deed18bfff?auto=format&fit=crop&w=200&q=80',cover:'image/xiejia_cover.jpg',video:'video/我卸甲后天下大乱了.mp4',likes:28600,cmts:567,desc:'卸下铠甲那一刻，天下风云骤变。一段关于权谋、征战与抉择的古风传奇。',certType:'community'},
+  {id:'003',title:'丞相府今日开饭',cat:'喜剧',rt:4.5,ep:'全24集',totalEp:24,author:'LENS',avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',cover:'image/chengxiangfu_cover.jpg',video:'video/丞相府今日开饭.mp4',likes:19800,cmts:423,desc:'丞相府的厨房里藏着天下大势，一道菜引发的朝堂风波。',certType:'partner'},
+  {id:'004',title:'时间管理局',cat:'科幻',rt:4.8,ep:'全16集',totalEp:16,author:'NOVA',avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',likes:32100,cmts:891,desc:'穿梭时空，修复那些被篡改的历史关键节点',certType:'creator'},
+  {id:'005',title:'迷途恋人',cat:'爱情',rt:3.9,ep:'全20集',totalEp:20,author:'ROSE',avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80',likes:56000,cmts:1203,desc:'失忆后重遇初恋，命运却开了一个残酷的玩笑',certType:'community'},
+  {id:'006',title:'代码风暴',cat:'动作',rt:4.2,ep:'第7集 / 共30集',totalEp:30,author:'CYPHER',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=800&q=80',likes:27800,cmts:654,desc:'天才程序员被诬陷入狱，出狱后展开惊天复仇计划',certType:'creator'},
+  {id:'007',title:'笑面人生',cat:'喜剧',rt:4.5,ep:'全36集',totalEp:36,author:'SMILE',avatar:'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=800&q=80',likes:42000,cmts:987,desc:'平凡小人物用笑声治愈身边每一个受伤的灵魂',certType:'community'},
+  {id:'008',title:'第七层梦境',cat:'悬疑',rt:4.3,ep:'第2集 / 共18集',totalEp:18,author:'DREAMER',avatar:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',likes:31500,cmts:756,desc:'进入他人梦境，却发现再也分不清真假虚实',certType:'official'},
+  {id:'009',title:'金融暗战',cat:'金融',rt:4.0,ep:'全44集',totalEp:44,author:'BULL',avatar:'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',likes:22000,cmts:534,desc:'华尔街之狼 vs 国内资本大鳄，谁是最后赢家',certType:'partner'},
+  {id:'010',title:'星际拓荒者',cat:'科幻',rt:4.7,ep:'全26集',totalEp:26,author:'STELLAR',avatar:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=200&q=80',cover:'https://images.unsplash.com/photo-1444723121867-7a241cacace9?auto=format&fit=crop&w=800&q=80',likes:48900,cmts:1123,desc:'人类最后的希望，踏上前所未有的星际征程',certType:'community'},
+  {id:'v001',type:'video',title:'打斗精彩片段',author:'EVA',avatar:'https://images.unsplash.com/photo-1457449940276-e8deed18bfff?auto=format&fit=crop&w=200&q=80',cover:'image/chengxiangfu_cover.jpg',video:'video/打斗视频.mp4',likes:'3.2万',duration:'02:15',desc:'精彩打斗场面合集，拳拳到肉的视觉盛宴',published:'2天前'},
+  {id:'v002',type:'video',title:'凤骨琉璃 EP01',author:'JACK',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',cover:'image/fenggu_cover.jpg',video:'video/凤骨琉璃.mp4',likes:'5.1万',duration:'08:45',desc:'凤骨琉璃第一集，苏婉清初入宫廷，命运从此改变',published:'1周前'},
+  {id:'v003',type:'video',title:'长安如梦 EP01',author:'ROSE',avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',cover:'image/cover-candle.jpg',video:'video/打斗视频.mp4',likes:'4.3万',duration:'10:20',desc:'长安如梦开篇，繁华盛世下的暗流涌动',published:'3天前'},
+  {id:'v004',type:'video',title:'零夜序章',author:'CYPHER',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',cover:'image/cover-zero-night.jpg',video:'video/丞相府今日开饭.mp4',likes:'3.8万',duration:'06:30',desc:'零夜序章，黑暗中的第一缕曙光',published:'5天前'},
+  {id:'v005',type:'video',title:'金字塔探险',author:'NOVA',avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',cover:'image/cover-pyramid.jpg',video:'video/凤骨琉璃.mp4',likes:'4.7万',duration:'12:05',desc:'金字塔深处的秘密，探险队揭开千年谜团',published:'1周前'},
+  {id:'v006',type:'video',title:'全押时刻',author:'BULL',avatar:'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=200&q=80',cover:'image/cover-allin.jpg',video:'video/我卸甲后天下大乱了.mp4',likes:'5.5万',duration:'09:18',desc:'全押时刻，赌上一切的终极对决',published:'4天前'}
+];
+
+var searchInput = document.getElementById('searchInput');
+var searchClear = document.getElementById('searchClear');
+var resultsEl = document.getElementById('results');
+var emptyState = document.getElementById('emptyState');
+var emptyText = document.getElementById('emptyText');
+var currentTab = 'token';
+var TABS = ['token', 'drama', 'video', 'user'];
+var TOKEN_PAGE = 24;      /* 代币页签每批条数（默认榜单与搜索结果一致） */
+var tokenShown = TOKEN_PAGE;
+var lastQuery = null;
+
+/* Get query from URL（?q= 关键词，?tab= 当前页签） */
+var params = new URLSearchParams(location.search);
+var query = params.get('q') || '';
+var urlTab = params.get('tab');
+if (TABS.indexOf(urlTab) !== -1) currentTab = urlTab;
+syncTabUI();
+searchInput.value = query;
+if (query) searchClear.classList.add('show');
+
+/* 页签高亮 + URL 同步（不新增历史记录） */
+function syncTabUI() {
+  document.querySelectorAll('.tab-item').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab === currentTab);
+  });
+  var url = window.location.pathname;
+  var parts = [];
+  if (query) parts.push('q=' + encodeURIComponent(query));
+  if (currentTab !== 'token') parts.push('tab=' + currentTab);
+  if (parts.length) url += '?' + parts.join('&');
+  try { history.replaceState(null, '', url); } catch (e) {}
+}
+
+/* Match helper */
+function match(str, q) {
+  if (!q) return true;
+  str = str.toLowerCase();
+  q = q.toLowerCase();
+  return str.indexOf(q) !== -1;
+}
+
+/* Format number to short string */
+function formatNum(n) {
+  if (typeof n === 'string') return n;
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return String(n);
+}
+
+/* Convert drama data to card format for drama-card.js */
+function toCardData(d) {
+  return {
+    title: d.title,
+    cover: d.cover,
+    category: d.cat,
+    sort: 'recommended',
+    certType: d.certType || 'community',
+    views: formatNum(d.likes),
+    heat: formatNum(d.cmts),
+    rating: String(d.rt),
+    badge: d.cat,
+    episodes: d.ep,
+    creator: d.author,
+    creatorAvatar: d.avatar,
+    link: 'drama-player.html?id=' + d.id + '&title=' + encodeURIComponent(d.title) + '&total=' + d.totalEp + '&cat=' + encodeURIComponent(d.cat) + '&author=' + encodeURIComponent(d.author) + '&avatar=' + encodeURIComponent(d.avatar) + '&cover=' + encodeURIComponent(d.cover) + '&desc=' + encodeURIComponent(d.desc) + '&video=' + encodeURIComponent(d.video || '')
+  };
+}
+
+/* Search functions */
+function searchDramas(q) {
+  var dramas = DATA.filter(function(d){ return d.type !== 'video'; });
+  if (!q) return dramas;
+  return dramas.filter(function(d){
+    return match(d.title, q) || match(d.cat, q) || (d.desc && match(d.desc, q));
+  });
+}
+
+function searchVideos(q) {
+      var videos = DATA.filter(function(d){ return d.type === 'video'; });
+      if (!q) return videos;
+      return videos.filter(function(d){
+        return match(d.title, q) || match(d.author, q) || (d.desc && match(d.desc, q));
+      });
+    }
+
+/* ── 代币（数据来自发射台引擎，命中口径与市场页筛选一致）── */
+function tokenHaystack(c) {
+  var contract = (window.Launch && Launch.coinContract) ? Launch.coinContract(c.id) : '';
+  return [c.name, c.symbol, c.pair, c.creatorAddr, c.id, contract].join(' ').toLowerCase();
+}
+
+function searchTokens(q) {
+  var coins = (window.Launch && Launch.coins) ? Launch.coins.slice() : [];
+  if (q) {
+    /* 允许 $TICKER 写法（等价 TICKER） */
+    var k = q.toLowerCase().replace(/^\$/, '');
+    coins = coins.filter(function(c){ return tokenHaystack(c).indexOf(k) !== -1; });
+  }
+  /* 默认榜单与搜索结果统一按市值降序 */
+  coins.sort(function(a, b){ return (b.marketCap || 0) - (a.marketCap || 0); });
+  return coins;
+}
+
+/* 卡内联 onclick 依赖：进入币详情 / 该地址资产档案 */
+function openCoin(id) { location.href = 'coin-detail.html?id=' + encodeURIComponent(id); }
+function goAddr(addr) { location.href = 'assets.html?address=' + encodeURIComponent(addr); }
+
+    function buildWorksModeLink(worksList, clickedIndex) {      var items = worksList.map(function(it) {
+        return {
+          type: it.type || 'video',
+          title: it.title || '',
+          author: it.author || '',
+          desc: it.desc || '',
+          cover: it.cover || '',
+          duration: it.duration || '',
+          likes: it.likes || ''
+        };
+      });
+      return 'drama-player.html?mode=works&index=' + clickedIndex +
+        '&works=' + encodeURIComponent(JSON.stringify(items));
+    }
+
+var USER_PROFILES = {
+  'JACK': { bio: '古风短剧创作者，专注于权谋与情感题材。', followers: '12.8万', likes: '56.3万', cover: 'image/fenggu_cover.jpg' },
+  'EVA': { bio: '热爱古风与喜剧，用镜头讲述有趣的故事。', followers: '8.4万', likes: '38.1万', cover: 'image/xiejia_cover.jpg' },
+  'LENS': { bio: '导演、编剧，喜剧赛道深耕者。', followers: '6.2万', likes: '22.5万', cover: 'image/chengxiangfu_cover.jpg' },
+  'NOVA': { bio: '科幻题材创作者，想象力天马行空。', followers: '9.7万', likes: '41.2万', cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80' },
+  'ROSE': { bio: '爱情短剧创作者，擅长细腻情感刻画。', followers: '15.1万', likes: '72.8万', cover: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=400&q=80' },
+  'CYPHER': { bio: '科技 + 动作内容创作者。', followers: '7.3万', likes: '31.6万', cover: 'https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=400&q=80' },
+  'SMILE': { bio: '用笑声治愈世界，喜剧赛道创作者。', followers: '11.5万', likes: '48.9万', cover: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=400&q=80' },
+  'DREAMER': { bio: '悬疑题材创作者，永远在追寻真相。', followers: '5.9万', likes: '19.2万', cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=80' },
+  'BULL': { bio: '金融题材创作者，讲述商海沉浮。', followers: '10.2万', likes: '44.7万', cover: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=400&q=80' },
+  'STELLAR': { bio: '星际科幻创作者，探索宇宙未知。', followers: '13.4万', likes: '61.5万', cover: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?auto=format&fit=crop&w=400&q=80' }
+};
+
+function searchUsers(q) {
+  var map = {};
+  DATA.forEach(function(d){
+    var profile = USER_PROFILES[d.author] || {};
+    if (!q) {
+      if (!map[d.author]) map[d.author] = { name: d.author, avatar: d.avatar, bio: profile.bio || '', followers: profile.followers || '0', likes: profile.likes || '0', dramas: 1, cover: profile.cover || d.cover };
+      else { map[d.author].dramas++; map[d.author].likes = (parseInt(map[d.author].likes) + (parseInt(d.likes) || 0)).toLocaleString(); }
+      return;
+    }
+    if (match(d.author, q) && !map[d.author]) {
+      map[d.author] = { name: d.author, avatar: d.avatar, bio: profile.bio || '', followers: profile.followers || '0', likes: profile.likes || '0', dramas: 1, cover: profile.cover || d.cover };
+    } else if (match(d.author, q) && map[d.author]) {
+      map[d.author].dramas++;
+    }
+  });
+  return Object.values(map);
+}
+
+/* Render based on tab */
+function renderTab(tab) {
+  currentTab = tab;
+  /* 关键词变化：代币分页回到第一批 */
+  if (query !== lastQuery) { tokenShown = TOKEN_PAGE; lastQuery = query; }
+  var html = '';
+  var dramaResults = searchDramas(query);
+  var userResults = searchUsers(query);
+  var tokenResults = searchTokens(query);
+
+  if (tab === 'token') {
+    var slice = tokenResults.slice(0, tokenShown);
+    html = '<div class="token-grid-wrap">' +
+      '<div class="token-sum">' + (query
+        ? '「' + escHtml(query) + '」共 ' + tokenResults.length + ' 个代币'
+        : '全部代币 ' + tokenResults.length + ' 个 · 按市值排序') + '</div>' +
+      '<ul class="px-grid">' + LaunchCard.grid(slice) + '</ul>' +
+      (tokenResults.length > slice.length
+        ? '<button type="button" class="px-load-more" id="pxLoadMore">加载更多（剩余 ' + (tokenResults.length - slice.length) + '）</button>'
+        : '') +
+    '</div>';
+    if (!tokenResults.length) {
+      emptyState.classList.add('show');
+      emptyText.textContent = query ? '未找到 "' + query + '" 的相关代币' : '暂无代币';
+    } else {
+      emptyState.classList.remove('show');
+    }
+  } else if (tab === 'drama') {
+    if (typeof renderDramaCardList === 'function') {
+      var cardData = dramaResults.map(toCardData);
+      html = '<div class="drama-gallery">' + renderDramaCardList(cardData) + '</div>';
+    } else {
+      dramaResults.forEach(function(d){
+        html += '<div class="result-card" data-id="'+d.id+'" data-type="drama"><img class="rc-cover" src="'+d.cover+'" alt="'+d.title+'"><div class="rc-info"><div class="rc-title">'+d.title+'</div><div class="rc-meta"><span class="rc-tag">'+d.cat+'</span><span class="rc-rating"><span class="star">★</span> '+d.rt+'</span><span class="rc-ep">'+d.ep+'</span></div><div class="rc-desc">'+d.desc+'</div></div></div>';
+      });
+    }
+    if (!dramaResults.length) {
+      emptyState.classList.add('show');
+      emptyText.textContent = '未找到相关短剧';
+    } else {
+      emptyState.classList.remove('show');
+    }
+  } else if (tab === 'video') {
+    var vs = searchVideos(query);
+    if (vs.length) {
+      var items = vs.map(function(d) {
+        return {
+          type: 'video',
+          title: d.title,
+          author: d.author || '',
+          desc: d.desc || '',
+          cover: d.cover || '',
+          duration: d.duration || '',
+          likes: d.likes || ''
+        };
+      });
+      html = '<div class="video-grid">' + vs.map(function(d, idx) {
+        return '<div class="video-card" onclick="location.href=\'' + buildWorksModeLink(items, idx) + '\'"><div class="vc-cover-wrap"><img class="vc-cover" src="'+d.cover+'" alt=""><span class="vc-likes"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'+d.likes+'</span><span class="vc-duration">'+d.duration+'</span></div><div class="vc-body"><div class="vc-desc">'+d.desc+'</div><div class="vc-meta-row"><span class="vc-author">@'+d.author+'</span><span class="vc-published">'+d.published+'</span></div></div></div>';
+      }).join('') + '</div>';
+    }
+    emptyState.classList.toggle('show', vs.length === 0);
+    if (vs.length === 0) emptyText.textContent = '未找到相关视频';
+  } else if (tab === 'user') {
+    if (userResults.length) {
+      html = '<div class="user-list">' + userResults.map(function(u){
+        return '<div class="user-card" data-name="'+u.name+'" data-type="user"><img class="uc-avatar" src="'+u.avatar+'" alt="'+u.name+'"><div class="uc-info"><div class="uc-name">'+u.name+'</div><div class="uc-bio">'+u.bio+'</div><div class="uc-stats"><span><strong>'+u.followers+'</strong> 粉丝</span><span><strong>'+u.dramas+'</strong> 短剧</span><span><strong>'+u.likes+'</strong> 获赞</span></div></div><button class="uc-follow-btn" onclick="event.stopPropagation();toggleFollow(this)">关注</button></div>';
+      }).join('') + '</div>';
+    }
+    if (!userResults.length) {
+      emptyState.classList.add('show');
+      emptyText.textContent = '未找到相关用户';
+    } else {
+      emptyState.classList.remove('show');
+    }
+  }
+
+  resultsEl.innerHTML = html;
+  bindResultClicks();
+
+  /* 代币页签：hover 播视频 + 加载更多 + 页签数量 */
+  if (tab === 'token') {
+    LaunchCard.bindVideos(resultsEl);
+    var more = document.getElementById('pxLoadMore');
+    if (more) more.addEventListener('click', function () {
+      tokenShown += TOKEN_PAGE;
+      renderTab('token');
+    });
+  }
+  updateTabCounts(tokenResults.length, dramaResults.length, searchVideos(query).length, userResults.length);
+}
+
+/* 文本插入 HTML 前的转义（关键词来自用户输入） */
+function escHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+/* 页签数量徽标 */
+function updateTabCounts(nToken, nDrama, nVideo, nUser) {
+  var map = { cntToken: nToken, cntDrama: nDrama, cntVideo: nVideo, cntUser: nUser };
+  Object.keys(map).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.textContent = map[id];
+  });
+}
+
+function bindResultClicks() {
+  resultsEl.querySelectorAll('.result-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      var d = DATA.find(function(x){ return x.id === this.dataset.id; });
+      if (!d) return;
+      location.href = 'drama-player.html?id='+d.id+'&title='+encodeURIComponent(d.title)+'&total='+d.totalEp+'&cat='+encodeURIComponent(d.cat)+'&author='+encodeURIComponent(d.author)+'&avatar='+encodeURIComponent(d.avatar)+'&cover='+encodeURIComponent(d.cover)+'&desc='+encodeURIComponent(d.desc)+'&video='+encodeURIComponent(d.video||'');
+    });
+  });
+  resultsEl.querySelectorAll('.user-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      showToast('👤 '+this.dataset.name+' 的主页开发中');
+    });
+  });
+}
+
+function toggleFollow(btn) {
+  if (btn.textContent === '关注') {
+    btn.textContent = '已关注';
+    btn.style.background = 'rgba(0,0,0,.08)';
+    btn.style.color = 'var(--text)';
+  } else {
+    btn.textContent = '关注';
+    btn.style.background = '';
+    btn.style.color = '';
+  }
+}
+
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(0,0,0,.82);color:#fff;padding:10px 22px;border-radius:10px;font-size:14px;font-family:-apple-system,sans-serif;pointer-events:none;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1200);
+  setTimeout(function(){ t.remove(); }, 1500);
+}
+
+/* Tab switch */
+document.querySelectorAll('.tab-item').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    currentTab = this.dataset.tab;
+    syncTabUI();
+    renderTab(currentTab);
+  });
+});
+
+/* Search input */
+searchInput.addEventListener('input', function(){
+  searchClear.classList.toggle('show', this.value.length > 0);
+  query = this.value.trim();
+  renderTab(currentTab);
+});
+searchClear.addEventListener('click', function(){
+  searchInput.value = '';
+  searchClear.classList.remove('show');
+  query = '';
+  lastQuery = null;
+  renderTab(currentTab);
+  searchInput.focus();
+});
+searchInput.addEventListener('keydown', function(e){
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    query = this.value.trim();
+    lastQuery = null;
+    renderTab(currentTab);
+  }
+});
+
+/* Init：默认「代币」页签 */
+renderTab(currentTab);
+</script>
+<script src="load-desktop-header.js?v=3"></script>
+  <script src="load-sidebar.js"></script>
+</body>
+</html>

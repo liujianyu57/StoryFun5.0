@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story.fun | 编辑视频</title>
+  <style>
+    :root {
+      --bg: #f7fbff; --surface: #ffffff; --accent: #000000;
+      --accent-soft: rgba(0, 0, 0, 0.12); --text: #1a232f;
+      --text-muted: #657586; --border: #e6eff7;
+      --shadow-sm: 0 4px 12px rgba(27, 45, 71, 0.06);
+      --shadow-md: 0 12px 28px rgba(27, 45, 71, 0.07);
+      --radius: 24px; --radius-lg: 32px; --danger: #f45b69;
+      font-family: "Segoe UI", Roboto, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    .app-shell { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+    .page-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 40px; margin-bottom: 28px; }
+    .page-header h2 { font-size: 2rem; letter-spacing: -0.02em; }
+    .page-header a { text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; transition: color 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .page-header a:hover { color: var(--accent); }
+
+    /* Form Panel */
+    .form-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+    .form-panel-header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); }
+    .form-panel-header h3 { font-size: 1.3rem; margin-bottom: 8px; }
+    .form-panel-header p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+    .form-panel-body { padding: 28px 32px 32px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* Cover Preview */
+    .cover-section { display: flex; align-items: center; gap: 20px; }
+    .cover-preview { width: 120px; height: 180px; border-radius: 14px; overflow: hidden; background: #eaf4ee; border: 2px dashed var(--border); flex-shrink: 0; cursor: pointer; transition: border-color 0.2s; }
+    .cover-preview:hover { border-color: var(--accent); }
+    .cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cover-info { display: flex; flex-direction: column; gap: 6px; }
+    .cover-info span { font-size: 0.82rem; color: var(--text-muted); }
+
+    /* Status Badge */
+    .status-row { display: flex; align-items: center; gap: 10px; }
+    .status-row label { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .status-badge { padding: 6px 14px 6px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; color: #fff; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.02em; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+    .status-pending { background: linear-gradient(135deg, #ff9f2c, #f59e0b); }
+    .status-approved { background: linear-gradient(135deg, #000000, #00c797); }
+    .status-rejected { background: linear-gradient(135deg, #f45b69, #e74c5a); }
+    .status-delisted { background: linear-gradient(135deg, #8e8e93, #6b6b70); }
+    .status-badge .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.7); flex-shrink: 0; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .form-group label .hint { font-weight: 400; color: var(--text-muted); font-size: 0.82rem; }
+    .form-group input[type="text"],
+    .form-group textarea {
+      padding: 12px 16px; border: 1px solid var(--border); border-radius: 14px;
+      font-size: 0.95rem; font-family: inherit; background: var(--surface); color: var(--text);
+      outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 0, 0,0.1); }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group .char-count { text-align: right; font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+    .form-group input[readonly] { background: #f8fafc; color: var(--text-muted); cursor: default; }
+
+    /* Footer */
+    .form-panel-footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 20px 32px; border-top: 1px solid var(--border); background: #fafcff; }
+    .btn { padding: 10px 24px; border-radius: 999px; border: none; cursor: pointer; font-size: 0.92rem; font-weight: 600; transition: all 0.2s ease; font-family: inherit; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0,0.3); }
+    .btn-secondary { background: rgba(15, 22, 42, 0.05); color: var(--text); }
+    .btn-secondary:hover { background: rgba(15, 22, 42, 0.1); }
+
+    .toast-notification { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px); z-index: 9999; background: rgba(26, 35, 47, 0.95); backdrop-filter: blur(8px); color: #fff; padding: 16px 24px; border-radius: 16px; font-size: 0.92rem; line-height: 1.6; box-shadow: 0 12px 40px rgba(27, 45, 71, 0.25); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; opacity: 0; pointer-events: none; max-width: 420px; text-align: center; font-weight: 500; }
+    .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    @media (max-width: 680px) {
+      .app-shell { padding: 16px; }
+      .page-header { margin-top: 20px; }
+      .form-panel-body { padding: 20px; }
+      .form-panel-footer { padding: 16px 20px; }
+      .cover-preview { width: 96px; height: 144px; }
+    }
+    @media (min-width: 769px) { body { padding-top: 56px; } }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="page-header">
+      <h2>✏️ 编辑视频</h2>
+      <a href="javascript:history.back()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        返回视频管理
+      </a>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-header">
+        <h3>视频信息</h3>
+        <p>修改视频的标题、描述等元数据。</p>
+      </div>
+      <div class="form-panel-body">
+        <!-- Cover Preview -->
+        <div class="cover-section">
+          <div class="cover-preview" onclick="document.getElementById('coverInput').click()" title="点击更换封面">
+            <img id="coverImg" src="" alt="封面预览" />
+          </div>
+          <div class="cover-info">
+            <span>点击缩略图可更换封面</span>
+            <span style="color: var(--text-muted);">建议比例 2:3</span>
+          </div>
+          <input type="file" accept="image/*" id="coverInput" style="display:none;" onchange="handleCoverChange(event)" />
+        </div>
+
+        <!-- Status -->
+        <div class="status-row">
+          <label>状态</label>
+          <span class="status-badge" id="statusBadge"><span class="status-dot"></span> <span id="statusText">已发布</span></span>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label>标题</label>
+          <input type="text" id="videoTitle" placeholder="输入视频标题" maxlength="30" oninput="updateCharCount()" />
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label>描述 <span class="hint">(最多 100 字)</span></label>
+          <textarea id="videoDesc" placeholder="输入作品描述..." maxlength="100" oninput="updateCharCount()"></textarea>
+          <div class="char-count"><span id="charCount">0</span>/100</div>
+        </div>
+
+        <!-- Author -->
+        <div class="form-group">
+          <label>作者</label>
+          <input type="text" id="videoAuthor" readonly />
+        </div>
+      </div>
+      <div class="form-panel-footer">
+        <button class="btn btn-secondary" onclick="history.back()">取消</button>
+        <button class="btn btn-primary" onclick="saveVideo()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-notification" id="toastNotification">
+    <span id="toastMessage"></span>
+  </div>
+
+  <script>
+    // Read URL parameters
+    const params = new URLSearchParams(location.search);
+    const title = params.get('title') || '未命名视频';
+    const cover = params.get('cover') || '';
+    const desc = params.get('desc') || '';
+    const author = params.get('author') || '';
+    const status = params.get('status') || 'approved';
+
+    // Populate form
+    document.getElementById('videoTitle').value = title;
+    document.getElementById('videoDesc').value = desc;
+    document.getElementById('videoAuthor').value = author;
+    document.getElementById('coverImg').src = cover;
+    updateCharCount();
+
+    // Set status badge
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const statusMap = {
+      'approved': { text: '已发布', cls: 'status-approved' },
+      'pending': { text: '审核中', cls: 'status-pending' },
+      'rejected': { text: '未通过', cls: 'status-rejected' },
+      'delisted': { text: '已下架', cls: 'status-delisted' }
+    };
+    const s = statusMap[status] || statusMap.approved;
+    statusBadge.className = 'status-badge ' + s.cls;
+    statusText.textContent = s.text;
+
+    function updateCharCount() {
+      const desc = document.getElementById('videoDesc').value;
+      document.getElementById('charCount').textContent = desc.length;
+    }
+
+    function handleCoverChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('coverImg').src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toast || !msgEl) return;
+      msgEl.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    }
+
+    function saveVideo() {
+      const newTitle = document.getElementById('videoTitle').value.trim();
+      const newDesc = document.getElementById('videoDesc').value.trim();
+
+      if (!newTitle) { showToast('⚠️ 请输入视频标题'); return; }
+
+      // Simulate save delay
+      const btn = document.querySelector('.btn-primary');
+      btn.textContent = '保存中...';
+      btn.disabled = true;
+
+      setTimeout(function() {
+        showToast('✅ 视频「' + newTitle + '」保存成功');
+        btn.textContent = '保存';
+        btn.disabled = false;
+        setTimeout(function() { history.back(); }, 800);
+      }, 600);
+    }
+  </script>
+
+  <div id="bottom-nav-placeholder"></div>
+  <script src="load-sidebar.js"></script>
+  <script src="load-desktop-header.js?v=3"></script>
+  <script src="auth.js"></script>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

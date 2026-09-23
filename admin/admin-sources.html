@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storyfun | 用户来源</title>
+  <link rel="stylesheet" href="admin-shared.css" />
+  <style>
+    .src-bar { display: inline-block; height: 8px; border-radius: 6px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <div id="admin-sidebar-placeholder"></div>
+  <div class="app-shell">
+    <div class="page-header">
+      <div>
+        <h1>🌍 用户来源</h1>
+        <div class="sub">按注册用户的国家 / 地区分布（国家默认 = 注册 IP GeoIP 归属）</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="card-title">地区分布<span class="hint">占比 = 地区用户 ÷ 注册用户</span></div>
+      <div id="regionBars"></div>
+    </div>
+
+    <div class="section-card">
+      <div class="card-title">国家分布<span class="hint" id="totalHint"></span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>国家</th><th>地区</th><th class="num">用户数量</th><th class="num">占比</th><th style="width:32%;">占比可视化</th></tr>
+          </thead>
+          <tbody id="countryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="load-admin-sidebar.js"></script>
+  <script src="admin-mock-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var M = window.SFMock; if (!M) return;
+      var users = M.users || [];
+      var fmtNum = M.helpers.fmtNum, pct = M.helpers.pct;
+      var REGION_ORDER = ['北美', '欧洲', '亚洲', '中东', '拉美', '非洲', '大洋洲'];
+
+      function barRows(elId, items) {
+        var el = document.getElementById(elId); if (!el) return;
+        var tot = users.length || 1;
+        var max = items.reduce(function (m, x) { return Math.max(m, x.v); }, 0) || 1;
+        el.innerHTML = items.map(function (x) {
+          return '<div style="margin-bottom:12px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;margin-bottom:4px">' +
+              '<b>' + x.k + '</b><span class="num">' + fmtNum(x.v) + ' · ' + pct(x.v, tot) + '</span></div>' +
+            '<div style="background:#eef2f8;border-radius:6px;overflow:hidden"><div class="src-bar" style="width:' + (x.v / max * 100).toFixed(1) + '%;background:' + (x.c || '#00b388') + '"></div></div>' +
+            '</div>';
+        }).join('');
+      }
+
+      var regMap = {};
+      var cntMap = {};
+      users.forEach(function (u) {
+        regMap[u.region] = (regMap[u.region] || 0) + 1;
+        cntMap[u.country] = (cntMap[u.country] || 0) + 1;
+      });
+      var regs = REGION_ORDER.filter(function (r) { return regMap[r]; }).map(function (r) { return { k: r, v: regMap[r], c: '#00b388' }; });
+      var others = Object.keys(regMap).filter(function (r) { return REGION_ORDER.indexOf(r) === -1; });
+      others.forEach(function (r) { regs.push({ k: r, v: regMap[r], c: '#7b5cf0' }); });
+      barRows('regionBars', regs);
+
+      var cnts = Object.keys(cntMap).map(function (c) { return { c: c, v: cntMap[c] }; }).sort(function (a, b) { return b.v - a.v; });
+      document.getElementById('totalHint').textContent = '共 ' + cnts.length + ' 个国家 / 地区 · 全量 ' + fmtNum(users.length) + ' 用户';
+      var colors = ['#00b388', '#00BBA7', '#7b5cf0', '#f5b042', '#f45b69', '#05DF72', '#3b82f6', '#8b8d98'];
+      var tot = users.length || 1;
+      document.getElementById('countryBody').innerHTML = cnts.map(function (x, i) {
+        var w = (x.v / tot * 100).toFixed(2);
+        return '<tr><td>' + x.c + '</td><td class="weak">' + (users.find(function (u) { return u.country === x.c; }) || {}).region + '</td>' +
+          '<td class="num">' + fmtNum(x.v) + '</td>' +
+          '<td class="num">' + w + '%</td>' +
+          '<td><div style="background:#eef2f8;border-radius:6px;overflow:hidden"><div class="src-bar" style="width:' + w + '%;background:' + colors[i % colors.length] + '"></div></div></td></tr>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

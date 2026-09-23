@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据 · 发射台</title>
+  <link rel="stylesheet" href="launch.css" />
+  <style>
+    /* ===== Analytics ===== */
+    .an-hero { padding: 30px 0 6px; }
+    .an-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .an-sub { font-size: 13.5px; color: var(--text-2); margin-top: 6px; line-height: 1.6; }
+    .an-sub .an-sub2 { display: block; font-size: 12px; color: var(--text-3); margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .an-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+    .an-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 22px 0 20px; }
+    .an-stat { padding: 18px 20px; }
+    .an-stat .k { font-size: 12px; color: var(--text-2); }
+    .an-stat .v { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-top: 8px; }
+    .an-stat .d { font-size: 12.5px; margin-top: 9px; font-variant-numeric: tabular-nums; }
+    .an-stat .d.down { color: #E5484D; }
+    .an-stat .d.up { color: #0E9F6E; }
+    .an-stat .d.na { color: var(--text-3); }
+    .an-note { font-size: 12px; color: var(--text-3); margin-top: 22px; padding-top: 14px;
+      border-top: 1px solid var(--border); line-height: 1.6; max-width: 720px; }
+
+    /* 大卡片：标题/副标题 + 三块 24h 数据 + Dune 注脚 */
+    .an-panel { padding: 26px 28px 18px; border-radius: 22px; }
+    .an-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); margin-top: 24px; padding-top: 6px; }
+    .an-metrics .m-cell { padding: 14px 26px 4px; border-left: 1px solid var(--border); }
+    .an-metrics .m-cell:first-child { border-left: none; padding-left: 2px; }
+    .an-metrics .k { font-size: 12px; color: var(--text-2); font-weight: 600; }
+    .an-metrics .v { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-top: 8px; }
+    .an-metrics .d { font-size: 12.5px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+    .an-metrics .d.down { color: #E5484D; }
+    .an-metrics .d.up { color: #0E9F6E; }
+    .an-metrics .d.na { color: var(--text-3); }
+    .an-metrics .v.na-v { color: var(--text-3); font-size: 22px; font-weight: 600; margin-top: 12px; }
+    .an-metrics .m-cell:nth-child(n+4) { border-top: 1px solid var(--border); }
+    .an-panel .an-note { border-top: none; margin-top: 10px; padding-top: 0; padding-bottom: 6px; max-width: none; }
+    @media (max-width: 760px) {
+      .an-metrics { grid-template-columns: 1fr; }
+      .an-metrics .m-cell { border-left: none; border-bottom: 1px solid var(--border); padding: 16px 2px; }
+      .an-metrics .m-cell:last-child { border-bottom: none; }
+    }
+
+    /* pons daily-context 图卡 */
+    .an-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; margin-top: 8px; }
+    .an-chart { padding: 20px 22px 18px; }
+    .an-chart .k { font-size: 12px; color: var(--text-2); font-weight: 600; }
+    .an-chart .v { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
+    .an-chart .an-chart-sub { font-size: 12px; color: var(--text-3); margin-top: 6px; line-height: 1.5; }
+    .an-chart .trend-svg { margin-top: 14px; }
+    @media (max-width: 820px) { .an-charts { grid-template-columns: 1fr; } }
+
+    .an-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; align-items: start; }
+    .seg-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .an-dune {
+      display: inline-flex; align-items: center; gap: 6px; height: 34px;
+      padding: 0 14px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); font-size: 12.5px; font-weight: 600;
+      text-decoration: none; white-space: nowrap; transition: all .15s;
+    }
+    .an-dune:hover { border-color: var(--text); background: var(--accent-soft); }
+    .an-dune svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .card-title { font-size: 14px; font-weight: 700; }
+    .card-sub { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+
+    /* 趋势图 */
+    .trend-svg { width: 100%; display: block; margin-top: 12px; }
+    .trend-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+    .trend-head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .trend-peak { font-size: 11.5px; color: var(--text-3); font-weight: 600; }
+
+    .note { font-size: 11.5px; color: var(--text-3); margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); line-height: 1.6; }
+
+    @media (max-width: 980px) {
+      .an-main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="launch-header-host"></div>
+
+    <main class="launch-shell">
+    <div class="card an-panel">
+      <div class="an-head">
+        <div>
+          <div class="an-title">Protocol analytics</div>
+          <div class="an-sub">Independent onchain reporting for pons markets on Robinhood Chain.
+            <span class="an-sub2 num" id="duneMeta">Dune updated —</span>
+          </div>
+        </div>
+        <div class="seg-wrap">
+          <div class="pill-seg" id="modeSeg">
+            <button type="button" data-m="24h" class="on">24h</button>
+            <button type="button" data-m="all">All time</button>
+          </div>
+          <a class="an-dune" href="https://dune.com/adam_tehc/pons" target="_blank" rel="noopener" title="打开 pons 官方 Dune 链上数据看板">
+            View on Dune
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- 三块 24h 数据 -->
+      <div class="an-metrics" id="statCards"></div>
+
+      <div class="an-note">Data is supplied by Dune from indexed onchain activity. The 24h view uses the latest completed UTC day.</div>
+    </div>
+
+    <!-- Daily context（pons：最近完整日高亮） -->
+    <div class="an-charts">
+      <div class="card an-chart">
+        <div class="k">Trading volume</div>
+        <div class="v num" id="chVolVal">—</div>
+        <div class="an-chart-sub">Recent daily context with the latest completed day highlighted.</div>
+        <svg class="trend-svg" id="chVolSvg" viewBox="0 0 560 150" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="card an-chart">
+        <div class="k">Token launches</div>
+        <div class="v num" id="chLauVal">—</div>
+        <div class="an-chart-sub">Recent daily context with the latest completed day highlighted.</div>
+        <svg class="trend-svg" id="chLauSvg" viewBox="0 0 560 150" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </main>
+
+  <script src="auth.js"></script>
+  <script src="launch-coin.js"></script>
+  <script src="launch-shell.js"></script>
+  <script>
+    // ============================================================
+    //  Protocol analytics（pons：Dune 提供；24h / All time 两视图）
+    //  数据取自本地演示引擎（确定性 mock），结构与文案对齐 pons
+    // ============================================================
+    var mode = '24h';   // '24h' | 'all'
+
+    function fmtK(n) {
+      if (n == null || isNaN(n)) return '—';
+      var a = Math.abs(n);
+      if (a >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+      if (a >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+      if (a >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+      if (a >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+      return n.toLocaleString('en-US');
+    }
+    function fmtUsdShort(n) {
+      if (n == null || isNaN(n)) return '—';
+      if (Math.abs(n) >= 1000) return '$' + fmtK(n);
+      return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+    function pctLine(cur, prev) {
+      if (prev == null || !(prev > 0) || cur == null) return { t: 'No prior-day baseline', c: 'na' };
+      var p = ((cur - prev) / prev) * 100;
+      var s = (p >= 0 ? '+' : '') + p.toFixed(1) + '% from prior day';
+      return { t: s, c: p >= 0 ? 'up' : 'down' };
+    }
+
+    // All time 图卡用：确定性 60 点序列（同一天内稳定）；带 M/D 日期标签，末点 = 最近完整日
+    function dayLabel(offsetDays) {
+      var d = new Date(Date.now() - (offsetDays || 0) * 86400000);
+      return (d.getMonth() + 1) + '/' + d.getDate();
+    }
+    function seededSeries(n, scale, seed) {
+      var s = (seed || 1) >>> 0, out = [];
+      function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+      for (var i = 0; i < n; i++) {
+        var f = 0.35 + 0.65 * (n === 1 ? 1 : i / (n - 1));
+        var j = 0.72 + rnd() * 0.56;
+        out.push({ label: dayLabel(n - 1 - i), value: Math.max(1, scale * f * j) });
+      }
+      return out;
+    }
+
+    function cellHtml(c) {
+      return '<div class="m-cell">' +
+        '<div class="k">' + c.k + '</div>' +
+        '<div class="v ' + (c.na ? 'na-v' : 'num') + '">' + c.v + '</div>' +
+        '<div class="d ' + (c.dc || 'na') + '">' + c.d + '</div>' +
+      '</div>';
+    }
+    function renderMetrics() {
+      var host = document.getElementById('statCards');
+      if (!host) return;
+      // 去重创建者（可按时间窗口筛选）
+      function uniqueDevs(coinsArr) {
+        var seen = {}, n = 0;
+        (coinsArr || []).forEach(function (c) {
+          var k = c.creatorAddr || c.creator || '';
+          if (k && !seen[k]) { seen[k] = 1; n++; }
+        });
+        return n;
+      }
+      // 最近完整 UTC 日（昨日 00:00 UTC 起 24h）
+      var day0 = Math.floor(Date.now() / 86400000) * 86400000 - 86400000;
+      var day24 = day0 + 86400000;
+      var cards = [];
+      if (mode === 'all') {
+        var all = Launch.analytics('all');
+        cards = [
+          { k: 'All-time volume', v: fmtUsdShort(all.totalVol || 0), d: 'Complete Dune history' },
+          { k: 'All-time launches', v: fmtK(all.launched || 0), d: 'Complete Dune history' },
+          { k: 'Unique token devs', v: fmtK(uniqueDevs(Launch.coins || [])), d: 'Lifetime total' }
+        ];
+      } else {
+        var a = Launch.analytics('24h');
+        var volT = a.volTrend || [], lauT = a.trend || [];
+        var curIdx = Math.max(0, volT.length - 2);
+        var preIdx = curIdx - 1;
+        var volCur = volT[curIdx] ? volT[curIdx].value : 0;
+        var volPre = preIdx >= 0 && volT[preIdx] ? volT[preIdx].value : null;
+        var lauCur = lauT[curIdx] ? lauT[curIdx].value : 0;
+        var lauPre = preIdx >= 0 && lauT[preIdx] ? lauT[preIdx].value : null;
+        var vd = pctLine(volCur, volPre), ld = pctLine(lauCur, lauPre);
+        var devsDay = (Launch.coins || []).filter(function (c) {
+          return c.launchedAt >= day0 && c.launchedAt < day24;
+        });
+        cards = [
+          { k: '24h volume', v: fmtUsdShort(volCur), d: vd.t, dc: vd.c },
+          { k: '24h launches', v: fmtK(lauCur), d: ld.t, dc: ld.c },
+          { k: 'Unique token devs', v: fmtK(uniqueDevs(devsDay)), d: 'Latest complete day UTC' }
+        ];
+      }
+      host.innerHTML = cards.map(cellHtml).join('');
+    }
+
+    function renderCharts() {
+      var a24 = Launch.analytics('24h');
+      var volT = a24.volTrend || [], lauT = a24.trend || [];
+      var curIdx = Math.max(0, volT.length - 2);
+      var volCur = volT[curIdx] ? volT[curIdx].value : 0;
+      var lauCur = lauT[curIdx] ? lauT[curIdx].value : 0;
+      var volData, lauData, hi, volVal, lauVal;
+      if (mode === 'all') {
+        var all = Launch.analytics('all');
+        volData = seededSeries(60, Math.max((all.totalVol || 0) / 70, 1), 20260901);
+        lauData = seededSeries(60, Math.max((all.launched || 0) / 55, 1), 20260902);
+        hi = volData.length - 1;
+        volVal = fmtUsdShort(all.totalVol || 0);
+        lauVal = fmtK(all.launched || 0);
+      } else {
+        // 截到最近完整日（昨天），保证横轴最后一个刻度即高亮点
+        volData = volT.slice(0, curIdx + 1);
+        lauData = lauT.slice(0, curIdx + 1);
+        hi = volData.length - 1;
+        volVal = fmtUsdShort(volCur);
+        lauVal = fmtK(lauCur);
+      }
+      var vv = document.getElementById('chVolVal');
+      var lv = document.getElementById('chLauVal');
+      if (vv) vv.textContent = volVal;
+      if (lv) lv.textContent = lauVal;
+      drawDaily('chVolSvg', volData, hi);
+      drawDaily('chLauSvg', lauData, hi);
+    }
+
+    function renderAll() { renderMetrics(); renderCharts(); }
+
+    function fillDuneMeta() {
+      var el = document.getElementById('duneMeta');
+      if (!el) return;
+      try {
+        var now = new Date();
+        var t = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        var y = new Date(Date.now() - 86400000);
+        var day = y.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+        el.textContent = 'Dune updated ' + t + ', latest complete day ' + day + ' UTC';
+      } catch (e) { el.textContent = 'Dune updated —'; }
+    }
+
+    function drawDaily(svgId, data, hi) {
+      var svg = document.getElementById(svgId);
+      if (!svg || !data || data.length < 2) return;
+      var w = 560, h = 150, pl = 12, pr = 12, pt = 14, pb = 28;
+      var iw = w - pl - pr, ih = h - pt - pb;
+      var vals = data.map(function (d) { return d.value; });
+      var mx = Math.max.apply(null, vals);
+      var mn = Math.min.apply(null, vals);
+      var span = (mx - mn) || 1;
+      var maxV = mx + span * 0.15, minV = Math.max(0, mn - span * 0.1);
+      var yAt = function (v) { return pt + ih - ((v - minV) / (maxV - minV || 1)) * ih; };
+      var pts = data.map(function (d, i) {
+        var x = pl + (iw / (data.length - 1)) * i;
+        return { x: x, y: yAt(d.value) };
+      });
+      var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' ');
+      var area = line + ' L' + pts[pts.length - 1].x.toFixed(1) + ' ' + (pt + ih) + ' L' + pl + ' ' + (pt + ih) + ' Z';
+      var dots = pts.map(function (p) {
+        return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="1.6" fill="#fff" stroke="#0A0B0D" stroke-width="1.2"/>';
+      }).join('');
+      var hiP = pts[Math.max(0, Math.min(pts.length - 1, hi))];
+      var axisY = pt + ih;
+      // 横轴日期：只取少量关键刻度（首/中/尾等 ≤5 个），避免放不下
+      var NT = 5;
+      var ticks = [];
+      for (var t = 0; t < NT; t++) ticks.push(Math.round(t * (pts.length - 1) / (NT - 1)));
+      var labels = '';
+      for (var t2 = 0; t2 < ticks.length; t2++) {
+        var iT = ticks[t2];
+        var pT = pts[iT];
+        var tx = (data[iT] && data[iT].label) || '';
+        if (!tx) continue;
+        var anchor = iT === 0 ? 'start' : (iT === pts.length - 1 ? 'end' : 'middle');
+        labels += '<text x="' + pT.x.toFixed(1) + '" y="' + (axisY + 13).toFixed(1) + '" font-size="9" fill="rgba(10,11,13,.42)" text-anchor="' + anchor + '" style="font-variant-numeric:tabular-nums">' + tx + '</text>';
+      }
+      svg.innerHTML =
+        '<defs><linearGradient id="ctxFill" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="rgba(10,11,13,.10)"/><stop offset="1" stop-color="rgba(10,11,13,0)"/></linearGradient></defs>' +
+        '<line x1="' + pl + '" y1="' + axisY + '" x2="' + (pl + iw) + '" y2="' + axisY + '" stroke="rgba(10,11,13,.12)" stroke-width="1"/>' +
+        '<path d="' + area + '" fill="url(#ctxFill)"/>' +
+        '<path d="' + line + '" fill="none" stroke="#0A0B0D" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>' + dots +
+        '<circle cx="' + hiP.x.toFixed(1) + '" cy="' + hiP.y.toFixed(1) + '" r="4.6" fill="#0A0B0D" stroke="#fff" stroke-width="2"/>' +
+        '<circle cx="' + hiP.x.toFixed(1) + '" cy="' + hiP.y.toFixed(1) + '" r="9" fill="none" stroke="rgba(10,11,13,.25)" stroke-width="1.5"/>' + labels;
+    }
+
+    window.onLaunchShellReady = function () {
+      fillDuneMeta();
+      document.getElementById('modeSeg').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-m]');
+        if (!b || b.getAttribute('data-m') === mode) return;
+        mode = b.getAttribute('data-m');
+        document.querySelectorAll('#modeSeg button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        renderAll();
+      });
+      renderAll();
+    };  </script>
+  <script src="load-desktop-header.js"></script>
+  <script src="load-sidebar.js"></script>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

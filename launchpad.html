@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore · 发射台 Story.fun</title>
+  <link rel="stylesheet" href="launch.css" />
+  <style>
+    /* ============================================================
+       Explore — 结构对齐 pons（Graduated 上 / Explore 下）
+       配色沿用本产品浅色设计系统
+       ============================================================ */
+    /* 页面无自有标题/搜索/创建入口：搜索与创建统一在桌面顶栏（发布菜单）与移动「+」面板 */
+    .px-shell { padding: 28px 0 90px; }
+    /* 语言切换：调试用，悬浮在页面最右侧（桌面右中、移动右下） */
+    .px-lang-float {
+      position: fixed; right: 14px; top: 50%; transform: translateY(-50%); z-index: 1200;
+      height: 32px; padding: 0 11px; border-radius: 999px; cursor: pointer;
+      border: 1px dashed var(--border-strong); background: rgba(255, 255, 255, .82);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      color: var(--text-3); font-family: inherit; font-size: 11.5px; font-weight: 700;
+      opacity: .55; transition: opacity .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .px-lang-float:hover { opacity: 1; color: var(--text); border-color: var(--text-3); }
+    .px-lang-float:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; opacity: 1; }
+
+    /* ---- Section ---- */
+    .px-section { margin-bottom: 34px; }
+    .px-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .px-head-main { min-width: 0; }
+    .px-title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .px-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .px-count { font-size: 13px; color: var(--text-2); font-weight: 600; }
+    .px-copy { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+
+    /* Explore 筛选行（pons: Recent buys | Newest | Oldest | Market cap | Volume · All|24h|7d） */
+    .px-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+
+    /* pons page-control 分页器 */
+    .px-pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; }
+    .px-pager-nav {
+      width: 30px; height: 30px; border-radius: 10px; display: inline-flex;
+      align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+      transition: border-color .15s, color .15s;
+    }
+    .px-pager-nav:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text); }
+    .px-pager-nav:disabled { opacity: .35; cursor: default; }
+    .px-pager-list { display: inline-flex; gap: 5px; }
+    .px-pager-page, .px-pager-dots {
+      min-width: 30px; height: 30px; padding: 0 6px; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; background: none; cursor: pointer;
+      font-size: 12.5px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums;
+    }
+    .px-pager-page:hover { border-color: var(--border-strong); color: var(--text); }
+    .px-pager-page.is-active { background: var(--accent); color: #fff; }
+    .px-pager-dots { color: var(--text-3); cursor: default; }
+
+
+
+    @media (max-width: 768px) {
+      /* 移动端：悬浮在右下角、底导上方 */
+      .px-lang-float { top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); transform: none; right: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="launch-header-host"></div>
+
+  <main class="launch-shell px-shell">
+    <!-- Section 1: Graduated（已毕业） -->
+    <section class="px-section" id="secGrad" aria-label="已毕业">
+      <div class="px-section-head">
+        <div class="px-head-main">
+          <div class="px-title-row">
+            <h2 class="px-title" id="gradTitle">已毕业</h2>
+            <span class="px-count num" id="gradCount">0</span>
+          </div>
+          <p class="px-copy">已越过毕业阈值的代币，流动性已上池并永久锁定。</p>
+        </div>
+      </div>
+      <ul class="px-grid" id="gradGrid"></ul>
+      <div class="px-empty" id="gradEmpty" style="display:none">暂无已毕业代币</div>
+      <nav class="px-pager" id="gradPager" aria-label="已毕业代币分页"></nav>
+    </section>
+
+    <!-- Section 2: Explore（进行中） -->
+    <section class="px-section" id="secExplore" aria-label="进行中">
+      <div class="px-section-head">
+        <div class="px-head-main">
+          <div class="px-title-row">
+            <h1 class="px-title" id="expTitle">进行中</h1>
+            <span class="px-count num" id="expCount">0</span>
+          </div>
+          <p class="px-copy">仍在向毕业攀登的代币 · 曲线售罄后自动上池。</p>
+        </div>
+        <div class="px-filters">
+          <div class="pill-seg" id="sortSeg">
+            <button data-s="recent" class="on">最近买入</button>
+            <button data-s="newest">最新</button>
+            <button data-s="oldest">最早</button>
+            <button data-s="marketcap">市值</button>
+            <button data-s="volume">成交量</button>
+          </div>
+          <div class="pill-seg" id="timeSeg">
+            <button data-t="all" class="on">全部</button>
+            <button data-t="24h">24h</button>
+            <button data-t="7d">7d</button>
+          </div>
+        </div>
+      </div>
+      <ul class="px-grid" id="exploreGrid"></ul>
+      <div class="px-empty" id="exploreEmpty" style="display:none"><b>暂无符合条件的代币</b><br>换个排序或时间窗试试</div>
+      <nav class="px-pager" id="expPager" aria-label="进行中代币分页"></nav>
+    </section>
+  </main>
+
+  <!-- 语言切换：调试按钮，悬浮在页面最右侧（不参与页面布局） -->
+  <button type="button" class="px-lang-float" id="langBtn" onclick="toggleLang()" title="切换中英文（调试）" aria-label="切换中英文">EN</button>
+
+  <script src="auth.js"></script>
+  <script src="launch-coin.js"></script>
+  <script src="launch-card.js"></script>
+  <script src="launch-shell.js"></script>
+  <script>
+    // ============================================================
+    //  中英切换：zh = 中文基准；en = 英文（pons 措辞）
+    // ============================================================
+    var UI_LANG = 'zh';
+    try { UI_LANG = localStorage.getItem('storyfun_lang') === 'en' ? 'en' : 'zh'; } catch (e) {}
+    function langIsEn() { return UI_LANG === 'en'; }
+    var I18N_EN = {
+      '已毕业': 'Graduated', '进行中': 'Explore',
+      '最近买入': 'Recent buys', '最新': 'Newest', '最早': 'Oldest',
+      '市值': 'Market cap', '成交量': 'Volume',
+      '全部': 'All',
+      '已越过毕业阈值的代币，流动性已上池并永久锁定。': 'Tokens that passed the graduation threshold; liquidity is pooled and locked forever.',
+      '仍在向毕业攀登的代币 · 曲线售罄后自动上池。': 'Tokens still climbing to graduation; when the curve sells out, liquidity goes to the pool.',
+      '暂无已毕业代币': 'No graduated tokens yet',
+      '暂无符合条件的代币': 'No tokens match your filters',
+      '换个排序或时间窗试试': 'Try a different sort or time window',
+      '已毕业代币分页': 'Graduated token pages',
+      '进行中代币分页': 'Explore token pages',
+      '发行者': 'Deployer',
+      '已毕业代币': 'Graduated token',
+      '上一页': 'Previous page', '下一页': 'Next page'
+    };
+    function tt(zh) {
+      if (!langIsEn() || zh == null) return zh;
+      return (I18N_EN[zh] != null) ? I18N_EN[zh] : zh;
+    }
+    function setLang(l) { try { localStorage.setItem('storyfun_lang', l); } catch (e) {} location.reload(); }
+    function toggleLang() { setLang(langIsEn() ? 'zh' : 'en'); }
+    // 静态文案整页替换（文本节点 + placeholder/title/aria）
+    function langApplyStatic() {
+      if (!langIsEn()) return;
+      if (!document || typeof document.createTreeWalker !== 'function' || typeof NodeFilter === 'undefined') return;
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+      var n;
+      while ((n = walker.nextNode())) {
+        var v = n.nodeValue.replace(/\s+/g, ' ').trim();
+        if (!v) continue;
+        var mapped = I18N_EN[v];
+        if (mapped != null) n.nodeValue = mapped;
+      }
+      var els = document.querySelectorAll('input,textarea,button,[title],[aria-label]');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        ['placeholder', 'title', 'aria-label'].forEach(function (attr) {
+          var v = el.getAttribute && el.getAttribute(attr);
+          if (v && I18N_EN[v] != null) el.setAttribute(attr, I18N_EN[v]);
+        });
+      }
+      var bt = document.getElementById('langBtn');
+      if (bt) bt.textContent = '中文';
+    }
+    // ============================================================
+    //  Explore —— pons 结构：Graduated 区块 + Explore 区块
+    //  卡片渲染由共享模块 launch-card.js 提供（市场页与搜索结果页同款）
+    // ============================================================
+    var state = { sort: 'recent', time: 'all', gradPage: 1, expPage: 1 };
+
+    function gradCoins() {
+      return (Launch.coins || []).filter(function (c) { return c.graduated; })
+        .sort(function (a, b) { return (b.gradAt || 0) - (a.gradAt || 0); });
+    }
+    function exploreCoins() {
+      var cutoff = state.time === '24h' ? Date.now() - 86400000
+        : state.time === '7d' ? Date.now() - 7 * 86400000 : 0;
+      var list = (Launch.coins || []).filter(function (c) {
+        if (c.graduated) return false;
+        if (cutoff) {
+          if (!c.lastBuyAt) return false;
+          if (c.lastBuyAt < cutoff && c.launchedAt < cutoff) return false;
+        }
+        return true;
+      });
+      list.sort(function (a, b) {
+        if (state.sort === 'newest') return b.launchedAt - a.launchedAt;
+        if (state.sort === 'oldest') return a.launchedAt - b.launchedAt;
+        if (state.sort === 'marketcap') return b.marketCap - a.marketCap;
+        if (state.sort === 'volume') return (b.volumeUsd || 0) - (a.volumeUsd || 0);
+        return (b.lastBuyAt || 0) - (a.lastBuyAt || 0);
+      });
+      return list;
+    }
+
+    function renderGrad() {
+      var list = gradCoins();
+      var grid = document.getElementById('gradGrid');
+      var empty = document.getElementById('gradEmpty');
+      var per = 6; // 已毕业：一页 6 条（大卡）
+      var pages = Math.max(1, Math.ceil(list.length / per));
+      if (state.gradPage > pages) state.gradPage = pages;
+      if (state.gradPage < 1) state.gradPage = 1;
+      var slice = list.slice((state.gradPage - 1) * per, state.gradPage * per);
+      document.getElementById('gradCount').textContent = Launch.fmtNum(list.length);
+      grid.innerHTML = LaunchCard.grid(slice);
+      LaunchCard.bindVideos(grid);
+      empty.style.display = list.length ? 'none' : 'block';
+      renderPager('gradPager', state.gradPage, pages, function (p) { state.gradPage = p; renderGrad(); });
+    }
+    function renderExplore() {
+      var list = exploreCoins();
+      var grid = document.getElementById('exploreGrid');
+      var empty = document.getElementById('exploreEmpty');
+      var per = 50;
+      var pages = Math.max(1, Math.ceil(list.length / per));
+      if (state.expPage > pages) state.expPage = pages;
+      if (state.expPage < 1) state.expPage = 1;
+      var slice = list.slice((state.expPage - 1) * per, state.expPage * per);
+      document.getElementById('expCount').textContent = langIsEn()
+        ? Launch.fmtNum(list.length) + ' launched'
+        : '已发射 ' + Launch.fmtNum(list.length);
+      grid.innerHTML = LaunchCard.grid(slice);
+      LaunchCard.bindVideos(grid);
+      empty.style.display = list.length ? 'none' : 'block';
+      renderPager('expPager', state.expPage, pages, function (p) { state.expPage = p; renderExplore(); });
+    }
+    function render() { renderGrad(); renderExplore(); }
+
+    // 页码折叠（pons 风格：首 / 尾常显，当前页 ±1，间隔省略）
+    function pageItems(cur, total) {
+      var set = new Set();
+      set.add(1);
+      if (total > 1) set.add(total);
+      for (var d = -1; d <= 1; d++) { if (cur + d >= 1 && cur + d <= total) set.add(cur + d); }
+      var arr = Array.from(set).sort(function (a, b) { return a - b; });
+      var out = [];
+      for (var i = 0; i < arr.length; i++) {
+        if (i && arr[i] - arr[i - 1] > 1) out.push('…');
+        out.push(arr[i]);
+      }
+      return out;
+    }
+    function renderPager(hostId, cur, total, onGo) {
+      var host = document.getElementById(hostId);
+      if (!host) return;
+      if (total <= 1) { host.innerHTML = ''; return; }
+      var items = pageItems(cur, total);
+      var h = '<button class="px-pager-nav" data-p="' + (cur - 1) + '"' + (cur <= 1 ? ' disabled' : '') + ' aria-label="' + tt('上一页') + '">‹</button>' +
+        '<div class="px-pager-list" role="group">' + items.map(function (it) {
+          if (it === '…') return '<span class="px-pager-dots">…</span>';
+          return '<button class="px-pager-page' + (it === cur ? ' is-active' : '') + '" data-p="' + it + '" aria-label="' + (langIsEn() ? 'Page ' + it : '第 ' + it + ' 页') + '">' + it + '</button>';
+        }).join('') + '</div>' +
+        '<button class="px-pager-nav" data-p="' + (cur + 1) + '"' + (cur >= total ? ' disabled' : '') + ' aria-label="' + tt('下一页') + '">›</button>';
+      host.innerHTML = h;
+      host.onclick = function (e) {
+        var b = e.target.closest('button[data-p]');
+        if (!b || b.disabled) return;
+        var p = parseInt(b.getAttribute('data-p'), 10);
+        if (p >= 1 && p <= total) onGo(p);
+      };
+    }
+
+    function openCoin(id) { location.href = 'coin-detail.html?id=' + encodeURIComponent(id); }
+    function goAddr(a) { location.href = 'assets.html?address=' + encodeURIComponent(a); }
+
+    // ============================================================
+    //  交互绑定
+    // ============================================================
+    window.onLaunchShellReady = function () {
+      render();
+
+      // Explore 工具栏（页面级）
+      document.getElementById('sortSeg').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-s]');
+        if (!b) return;
+        document.querySelectorAll('#sortSeg button').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        state.sort = b.getAttribute('data-s');
+        state.expPage = 1;
+        renderExplore();
+      });
+      document.getElementById('timeSeg').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-t]');
+        if (!b) return;
+        document.querySelectorAll('#timeSeg button').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        state.time = b.getAttribute('data-t');
+        state.expPage = 1;
+        renderExplore();
+      });
+      langApplyStatic();   // en 模式：整页静态文案收尾翻译
+    };
+  </script>
+  <script src="load-desktop-header.js"></script>
+  <script src="load-sidebar.js"></script>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

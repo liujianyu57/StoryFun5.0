@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story.fun | 编辑短剧</title>
+  <style>
+    :root {
+      --bg: #f5faff;
+      --surface: #ffffff;
+      --accent: #000000;
+      --accent-soft: rgba(0, 0, 0, 0.12);
+      --accent-glow: rgba(0, 0, 0, 0.25);
+      --text: #13202e;
+      --text-muted: #5e6f83;
+      --border: #deeaf7;
+      --shadow-sm: 0 4px 12px rgba(27, 45, 71, 0.06);
+      --shadow-md: 0 12px 28px rgba(27, 45, 71, 0.07);
+      --radius: 24px;
+      --radius-lg: 32px;
+      --danger: #f45b69;
+      --warning: #ff9f2c;
+      font-family: "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+    @media (min-width: 769px) { body { padding-top: 56px; } }
+    .app-shell { max-width: 1440px; margin: 0 auto; padding: 24px; }
+
+    /* ===== Auth Styles ===== */
+    .auth-container { display: flex; align-items: center; }
+    .auth-login-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+    .auth-login-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .auth-user-menu { position: relative; }
+    .auth-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 2px solid var(--accent-soft); transition: border-color 0.2s; position: relative; flex-shrink: 0; }
+    .auth-avatar:hover { border-color: var(--accent); }
+    .auth-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .auth-avatar-dot { display: none; }
+    .auth-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 240px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 40px rgba(27,45,71,0.15); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.25s ease; z-index: 100; overflow: hidden; }
+    .auth-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .auth-dropdown-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
+    .auth-dropdown-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .auth-dropdown-name { font-weight: 600; font-size: 0.92rem; color: var(--text); }
+    .auth-dropdown-divider { height: 1px; background: var(--border); margin: 0; }
+    .auth-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 12px 18px; color: var(--text); text-decoration: none; font-size: 0.9rem; transition: background 0.15s; cursor: pointer; }
+    .auth-dropdown-item:hover { background: rgba(0,0,0,0.03); }
+    .auth-dropdown-item span { font-size: 1.1rem; }
+    .auth-dropdown-logout { color: #f45b69; }
+    .auth-dropdown-logout:hover { background: rgba(244,91,105,0.06); }
+    .auth-modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+    .auth-modal-overlay.active { opacity: 1; visibility: visible; }
+    .auth-modal { background: var(--surface); border-radius: 28px; width: 100%; max-width: 420px; box-shadow: 0 40px 80px rgba(27,45,71,0.2); overflow: hidden; transform: scale(0.95) translateY(10px); transition: transform 0.3s ease; }
+    .auth-modal-overlay.active .auth-modal { transform: scale(1) translateY(0); }
+    .auth-modal-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(0,0,0,0.04); cursor: pointer; display: grid; place-items: center; font-size: 1.1rem; color: var(--text-muted); transition: all 0.2s; z-index: 1; }
+    .auth-modal-close:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+    .auth-modal-header { text-align: center; padding: 36px 28px 20px; position: relative; }
+    .auth-modal-logo { width: 56px; height: 56px; border-radius: 50%; background: #000000; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 1.3rem; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0, 0, 0,0.3); }
+    .auth-modal-header h2 { margin: 0 0 6px; font-size: 1.4rem; }
+    .auth-modal-header p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
+    .auth-modal-body { padding: 8px 28px 32px; display: flex; flex-direction: column; gap: 12px; }
+    .auth-modal-tos { text-align: center; color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; margin: 4px 0 0; }
+    .auth-modal-tos a { color: var(--accent); text-decoration: none; }
+    .auth-toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px); z-index: 10000; background: rgba(26,35,47,0.95); backdrop-filter: blur(8px); color: #fff; padding: 14px 24px; border-radius: 14px; font-size: 0.92rem; box-shadow: 0 12px 40px rgba(27,45,71,0.25); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease; opacity: 0; pointer-events: none; max-width: 400px; text-align: center; font-weight: 500; }
+    .auth-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    .page-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 40px; margin-bottom: 28px; }
+    .page-header h2 { font-size: 2rem; letter-spacing: -0.02em; }
+    .page-header a { text-decoration: none; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; transition: color 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .page-header a:hover { color: var(--accent); }
+    .page-header .drama-meta-badge { font-size: 0.85rem; color: var(--text-muted); background: #f0f5fe; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--border); }
+
+    /* Steps Bar */
+    .steps-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 12px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow-sm); overflow-x: auto; }
+    .step-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .step-item .step-circle { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; background: rgba(0,0,0,0.05); color: var(--text-muted); transition: all 0.3s ease; flex-shrink: 0; }
+    .step-item .step-label { font-size: 0.88rem; font-weight: 500; color: var(--text-muted); transition: color 0.3s ease; }
+    .step-item.active .step-circle { background: #13202e; color: #fff; }
+    .step-item.active .step-label { color: #13202e; font-weight: 600; }
+    .step-item.done .step-circle { background: var(--accent); color: #fff; }
+    .step-item.done .step-label { color: var(--accent); }
+
+    /* Form Panel */
+    .form-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+    .form-panel-header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); }
+    .form-panel-header h3 { font-size: 1.5rem; margin-bottom: 8px; }
+    .form-panel-header p { color: var(--text-muted); font-size: 0.96rem; line-height: 1.7; }
+    .form-panel-body { padding: 28px 32px 32px; }
+    .form-panel-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 32px; border-top: 1px solid var(--border); background: #fafcff; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .form-group label .hint { font-weight: 400; color: var(--text-muted); font-size: 0.88rem; }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="url"],
+    .form-group select,
+    .form-group textarea {
+      padding: 12px 16px; border: 1px solid var(--border); border-radius: 14px; font-size: 0.95rem; font-family: inherit; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group .char-count { text-align: right; font-size: 0.85rem; color: var(--text-muted); }
+
+    /* Cover upload */
+    .cover-upload { position: relative; border: 2px dashed var(--border); border-radius:999px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f8fbff; }
+    .cover-upload:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .cover-upload.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+    .cover-upload .upload-icon { font-size: 2.4rem; color: var(--text-muted); margin-bottom: 12px; }
+    .cover-upload p { color: var(--text-muted); font-size: 0.95rem; }
+    .cover-upload p strong { color: var(--accent); }
+    .cover-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .cover-preview-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .cover-preview-row .preview-img { width: 120px; height: 90px; border-radius: 14px; object-fit: cover; border: 1px solid var(--border); background: #f0f4fe; flex-shrink: 0; }
+    .cover-preview-row .preview-info { flex: 1; }
+
+    /* Tags */
+    .tag-options { display: flex; flex-wrap: wrap; gap: 10px; }
+    .tag-option { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; }
+    .tag-option:hover { border-color: var(--accent); color: var(--accent); }
+    .tag-option.selected { background: var(--accent); color: #fff; border-color: transparent; }
+
+    /* ===== Character Card Grid ===== */
+    .char-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 0 16px; border-bottom: 2px solid var(--accent); margin-bottom: 24px; }
+    .char-panel-header h3 { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; }
+    .char-add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 18px; border-radius: 999px; border: none; background: var(--accent-soft); color: var(--accent); font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+    .char-add-btn:hover { background: rgba(0, 0, 0,0.2); }
+    .char-add-btn .plus-icon { font-size: 1.1rem; line-height: 1; }
+
+    .char-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .char-card { position: relative; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); transition: all 0.25s ease; display: flex; flex-direction: column; min-width: 0; }
+    .char-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .char-card .char-avatar-area { position: relative; width: 100%; aspect-ratio: 1 / 1; background: linear-gradient(135deg, #e8f5ef, #d4ece5); overflow: hidden; flex-shrink: 0; z-index: 1; }
+    .char-card .char-avatar-area img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .char-card .char-avatar-area .char-avatar-placeholder { width: 100%; height: 100%; display: grid; place-items: center; font-size: 2rem; color: var(--accent); }
+    .char-card .char-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .char-card .char-body .char-name { font-size: 0.85rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .char-card .char-body .char-salary { font-size: 0.78rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+    .char-card .char-remove-btn { margin-top: 6px; width: 100%; padding: 7px 0; border-radius:999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+    .char-card .char-remove-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(244,91,105,0.06); }
+    .char-card.add-card { border: 2px dashed var(--border); background: transparent; display: grid; place-items: center; cursor: pointer; transition: all 0.25s ease; }
+    .char-card.add-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .char-card.add-card .add-card-content { text-align: center; padding: 24px; }
+    .char-card.add-card .add-card-content .add-icon { font-size: 2.4rem; color: var(--text-muted); }
+    .char-card.add-card .add-card-content p { color: var(--text-muted); font-size: 0.95rem; }
+    .char-card.add-card .add-card-content p strong { color: var(--accent); }
+
+    .char-modal-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+    .char-modal-overlay.active { opacity: 1; visibility: visible; }
+    .char-modal { background: var(--surface); border-radius: 28px; width: 100%; max-width: 480px; box-shadow: 0 40px 80px rgba(27,45,71,0.2); overflow: hidden; transform: scale(0.95) translateY(10px); transition: transform 0.3s ease; }
+    .char-modal-overlay.active .char-modal { transform: scale(1) translateY(0); }
+    .char-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px 16px; }
+    .char-modal-header h3 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+    .char-modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(0,0,0,0.04); cursor: pointer; display: grid; place-items: center; font-size: 1.1rem; color: var(--text-muted); transition: all 0.2s; }
+    .char-modal-close:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+    .char-modal-body { padding: 8px 28px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .char-modal-body .form-group input,
+    .char-modal-body .form-group textarea { padding: 12px 16px; border: 1px solid var(--border); border-radius: 14px; font-size: 0.95rem; font-family: inherit; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.2s ease; width: 100%; }
+    .char-modal-body .form-group input:focus,
+    .char-modal-body .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .char-modal-body .form-group textarea { min-height: 80px; resize: vertical; }
+    .char-modal-body .char-avatar-upload { display: flex; align-items: center; gap: 16px; }
+    .char-modal-body .char-avatar-upload .avatar-preview { width: 64px; height: 64px; border-radius: 50%; background: #f0f4f8; display: grid; place-items: center; font-size: 1.6rem; color: var(--text-muted); overflow: hidden; flex-shrink: 0; }
+    .char-modal-body .char-avatar-upload .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .char-modal-body .char-avatar-upload .avatar-upload-btn { padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+    .char-modal-body .char-avatar-upload .avatar-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .char-modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 28px 24px; }
+    .char-modal-footer .button { min-width: 100px; justify-content: center; }
+
+    /* ===== Pricing & Revenue ===== */
+    .pricing-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 32px; }
+    .pricing-subtitle { font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+    .pricing-section { display: flex; flex-direction: column; gap: 12px; }
+    .pricing-section-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .pricing-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .pricing-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; }
+    .pricing-field label { font-size: 0.88rem; font-weight: 500; color: var(--text-muted); }
+    .pricing-field .input-wrap { display: flex; align-items: center; gap: 8px; }
+    .pricing-field .input-wrap input { flex: 1; padding: 14px 16px; border: 1px solid #f0f0f3; border-radius: 16px; font-size: 0.95rem; font-family: inherit; background: #f6f6f6; color: var(--text); outline: none; transition: border-color 0.2s ease; min-width: 0; width: 100%; }
+    .pricing-field .input-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .pricing-field .input-wrap .unit { font-size: 0.92rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .pricing-hint { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+    .revenue-preview { background: rgba(0, 0, 0,0.06); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .revenue-preview .revenue-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .revenue-preview .revenue-header .label { font-size: 1rem; font-weight: 700; color: var(--accent); }
+    .revenue-preview .revenue-header .value { font-size: 1rem; font-weight: 700; color: var(--accent); }
+    .revenue-preview .revenue-note { font-size: 0.82rem; color: rgba(0, 0, 0,0.7); line-height: 1.6; }
+
+    .button, .button-secondary, .button-ghost, .button-outline { border: none; cursor: pointer; border-radius: 999px; padding: 12px 24px; font-size: 0.95rem; transition: all 0.25s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+    .button { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0,0.30); }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0,0.40); }
+    .button-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .button-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .button-ghost { background: transparent; color: var(--text-muted); }
+    .button-ghost:hover { color: var(--text); }
+    .button-outline { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .button-outline:hover { border-color: var(--text); color: var(--text); }
+
+    /* ===== Batch Video Upload Styles (from publish.html) ===== */
+    .batch-upload-zone { position: relative; border: 2px dashed var(--border); border-radius:999px; padding: 28px 24px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f8fbff; margin-bottom: 24px; }
+    .batch-upload-zone:hover,
+    .batch-upload-zone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+    .batch-upload-zone .upload-icon { font-size: 3rem; color: var(--text-muted); margin-bottom: 12px; }
+    .batch-upload-zone p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; }
+    .batch-upload-zone p strong { color: var(--accent); }
+    .batch-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .batch-upload-hint { display: flex; justify-content: center; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
+    .batch-upload-hint span { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+    .upload-queue { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .upload-queue-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .upload-queue-header h4 { font-size: 1rem; font-weight: 600; }
+    .upload-queue-header .queue-count { color: var(--text-muted); font-size: 0.88rem; }
+    .upload-queue-empty { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 0.95rem; }
+    .upload-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--border); border-radius:999px; background: #fafcff; transition: all 0.2s ease; }
+    .upload-item:hover { border-color: rgba(0, 0, 0,0.25); box-shadow: 0 2px 8px rgba(0, 0, 0,0.06); }
+    .upload-item .episode-num { width: 28px; text-align: center; font-weight: 700; font-size: 0.95rem; color: var(--accent); flex-shrink: 0; }
+    .upload-item .thumb { width: 48px; height: 48px; border-radius:999px; background: rgba(0,0,0,0.04); display: grid; place-items: center; font-size: 1.4rem; flex-shrink: 0; overflow: hidden; position: relative; }
+    .upload-item .thumb video,
+    .upload-item .thumb img { width: 100%; height: 100%; object-fit: cover; border-radius:999px; }
+    .upload-item .thumb .file-type-badge { position: absolute; bottom: 2px; right: 2px; font-size: 0.6rem; background: rgba(0,0,0,0.6); color: #fff; padding: 1px 5px; border-radius:999px; line-height: 1.4; }
+    .upload-item .info { flex: 1; min-width: 0; }
+    .upload-item .info .name { font-size: 0.95rem; font-weight: 600; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+    .upload-item .info .meta { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .upload-item .info .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 999px; margin-top: 8px; overflow: hidden; }
+    .upload-item .info .progress-bar .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; width: 0%; }
+    .upload-item .info .progress-bar .progress-fill.error { background: var(--danger); }
+    .upload-item .info .progress-bar .progress-fill.done { background: #16a34a; }
+    .upload-item .status-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+    .upload-item .status-badge.uploading { background: rgba(0, 0, 0,0.1); color: var(--accent); }
+    .upload-item .status-badge.done { background: rgba(34,197,94,0.1); color: #16a34a; }
+    .upload-item .status-badge.failed { background: rgba(244,91,105,0.1); color: var(--danger); }
+    .upload-item .status-badge.waiting { background: rgba(255,159,44,0.1); color: var(--warning); }
+    .upload-item .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .upload-item .title-edit { display: flex; align-items: center; gap: 6px; }
+    .upload-item .title-edit input { padding: 4px 10px; border: 1px solid var(--border); border-radius:999px; font-size: 0.85rem; font-family: inherit; outline: none; width: 220px; transition: border-color 0.2s; background: var(--surface); }
+    .upload-item .title-edit input:placeholder-shown { border-style: dashed; border-color: rgba(0,0,0,0.2); }
+    .upload-item .title-edit input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .batch-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 16px 0; margin-top: 4px; }
+    .batch-toolbar .btn-tool { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+    .batch-toolbar .btn-tool:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .batch-toolbar .btn-tool.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(244,91,105,0.06); }
+    .btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius:999px; border: 1px solid transparent; background: transparent; color: var(--text-muted); font-size: 1rem; cursor: pointer; transition: all 0.2s ease; }
+    .btn-icon:hover { border-color: var(--border); color: var(--text); background: rgba(0,0,0,0.02); }
+    .btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(244,91,105,0.06); }
+    .upload-item.dragging { opacity: 0.4; border-color: var(--accent); }
+    .upload-item.drag-over-target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .drag-handle { cursor: grab; color: var(--text-muted); font-size: 1rem; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+
+    /* ===== Actor Bind Modal ===== */
+    .actor-bind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 360px; overflow-y: auto; padding: 4px; }
+    .actor-bind-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all 0.18s ease; background: var(--surface); position: relative; }
+    .actor-bind-item:hover { border-color: var(--accent); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10); }
+    .actor-bind-item.is-selected { border-color: var(--accent); background: rgba(0, 0, 0, 0.05); }
+    .actor-bind-item.is-bound { opacity: 0.5; cursor: default; }
+    .actor-bind-item .abi-avatar { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: linear-gradient(135deg, #e8f5ef, #d4ece5); }
+    .actor-bind-item .abi-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .actor-bind-item .abi-name { font-size: 0.88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .actor-bind-item .abi-id { font-size: 0.72rem; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; }
+    .actor-bind-empty { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 0.92rem; }
+    .actor-bind-empty .empty-icon { font-size: 2rem; margin-bottom: 10px; }
+    .actor-bind-status { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 0.78rem; font-weight: 500; white-space: nowrap; margin-top: 8px; }
+    .actor-bind-status img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .char-bind-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px 14px; border-radius:999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+    .char-bind-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .char-bind-btn.bound { border-color: var(--accent); background: rgba(0, 0, 0,0.06); }
+    .char-bind-actor-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+    @media (max-width: 1200px) { .char-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px) { .form-row { grid-template-columns: 1fr; } .steps-bar { border-radius: var(--radius); flex-wrap: nowrap; } .char-grid { grid-template-columns: repeat(2, 1fr); } .pricing-panel { padding: 20px; } .actor-bind-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) { .form-panel-body, .form-panel-header, .form-panel-footer { padding-left: 20px; padding-right: 20px; } .char-grid { grid-template-columns: 1fr; } .upload-item { padding: 10px 12px; gap: 10px; border-radius:999px; border: none; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04); align-items: flex-start; flex-wrap: wrap; } .upload-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); } .upload-item .episode-num { width: 22px; font-size: 0.85rem; line-height: 44px; } .upload-item .thumb { width: 44px; height: 44px; border-radius:999px; } .upload-item .info { flex: 1; min-width: 0; } .upload-item .info .name { font-size: 0.82rem; } .upload-item .info .meta { font-size: 0.7rem; gap: 6px; margin-top: 2px; flex-wrap: wrap; } .upload-item .title-edit input { font-size: 0.85rem; width: 100%; border-radius:999px; margin-top: 6px; } .upload-item .item-actions { margin-left: auto; gap: 4px; flex-shrink: 0; align-self: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <div class="page-header">
+      <div>
+        <a href="narrator.html">← 返回</a>
+        <h2>编辑短剧</h2>
+      </div>
+      <span class="drama-meta-badge" id="dramaTitleBadge">📺 正在编辑：—</span>
+    </div>
+
+    <!-- Step Progress -->
+    <div class="steps-bar">
+      <div class="step-item active">
+        <span class="step-circle">1</span>
+        <span class="step-label">基本信息</span>
+      </div>
+      <span style="color:#deeaf7;font-size:1.2rem;">›</span>
+      <div class="step-item">
+        <span class="step-circle">2</span>
+        <span class="step-label">剧集管理</span>
+      </div>
+    </div>
+
+    <!-- Step 1: 基本信息 -->
+    <div class="form-panel" id="step1">
+      <div class="form-panel-body">
+        <div class="form-row full">
+          <div class="form-group">
+            <label>短剧名称 <span class="hint">（不可修改）</span></label>
+            <input type="text" id="editDramaName" readonly style="background:#f5f8fc;color:var(--text-muted);cursor:not-allowed;" />
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>封面图</label>
+            <div class="cover-upload" id="coverUploadZone">
+              <div class="upload-icon">🖼️</div>
+              <p>点击上传封面图片，支持拖拽<br /><strong>支持 JPG、PNG</strong></p>
+              <input type="file" id="coverFileInput" accept="image/*" />
+            </div>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>短剧简介 <span class="hint">（最多 500 字）</span></label>
+            <textarea id="editDescription" placeholder="编辑短剧的核心剧情、风格特色与亮点……" maxlength="500"></textarea>
+            <span class="char-count" id="descCharCount">0/500</span>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>分类标签 <span class="hint">（最多选择 5 个）</span></label>
+            <div class="tag-options" id="tagOptions">
+              <span class="tag-option" data-tag="金融">金融</span>
+              <span class="tag-option" data-tag="悬疑">悬疑</span>
+              <span class="tag-option" data-tag="真实改编">真实改编</span>
+              <span class="tag-option" data-tag="爱情">爱情</span>
+              <span class="tag-option" data-tag="科幻">科幻</span>
+              <span class="tag-option" data-tag="剧情">剧情</span>
+              <span class="tag-option" data-tag="喜剧">喜剧</span>
+              <span class="tag-option" data-tag="动作">动作</span>
+              <span class="tag-option" data-tag="古装">古装</span>
+              <span class="tag-option" data-tag="冒险">冒险</span>
+              <span class="tag-option" data-tag="推理">推理</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel-footer">
+        <span></span>
+        <button class="button" onclick="goToStep(2)">下一步：剧集管理 →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: 剧集管理 (批量上传) -->
+    <div class="form-panel" id="step2" style="display:none;">
+      <div class="form-panel-body">
+        <!-- Batch Upload Zone -->
+        <div class="batch-upload-zone" id="batchUploadZone">
+          <div class="upload-icon">📹</div>
+          <p>点击上传，提交后会按视频名称自动排序</p>
+          <div class="batch-upload-hint">
+            <span>限制文件类型 mp4, flv, wmv, asf, mkv, avi, rm, rmvb, mpg, mpeg, mov, webm</span>
+            <span>限制单集时长不短于30秒，整剧总时长大于10分钟，文件大小不超过3GB</span>
+          </div>
+          <input type="file" id="videoFileInput" accept="video/mp4,video/x-flv,video/x-ms-wmv,video/x-ms-asf,video/x-matroska,video/avi,video/x-msvideo,application/vnd.rn-realmedia,video/x-pn-realvideo,video/mpeg,video/quicktime,video/webm" multiple />
+        </div>
+
+        <!-- Upload Queue -->
+        <div id="uploadQueue" class="upload-queue" style="display:none;">
+          <div class="upload-queue-header">
+            <h4>📄 已添加的视频 <span class="queue-count" id="queueCount">(0 个文件)</span></h4>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);padding-bottom:8px;border-bottom:1px solid var(--border);">💡 填写分集描述有助于更精准的流量推荐</div>
+          <div id="queueItems"></div>
+          <div id="queueEmpty" class="upload-queue-empty">暂无视频文件，请点击上方区域添加</div>
+        </div>
+
+        <!-- Batch Toolbar -->
+        <div class="batch-toolbar" id="batchToolbar" style="display:none;">
+          <span style="font-size:0.82rem;color:var(--text-muted);" id="uploadStats"></span>
+        </div>
+      </div>
+      <div class="form-panel-footer">
+        <button class="button-ghost" onclick="goToStep(1)">← 上一步</button>
+        <button class="button" style="padding:12px 36px;" onclick="submitEdit()">保存修改</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="load-sidebar.js"></script>
+  <script src="auth.js"></script>
+  <script src="load-desktop-header.js?v=3"></script>
+
+  <script>
+    // === Step Navigation ===
+    function goToStep(num) {
+      const steps = ['step1','step2'];
+      const stepItems = document.querySelectorAll('.step-item');
+      steps.forEach((id, i) => {
+        document.getElementById(id).style.display = i + 1 === num ? 'block' : 'none';
+        const item = stepItems[i];
+        if (!item) return;
+        item.classList.remove('active', 'done');
+        if (i + 1 < num) {
+          item.classList.add('done');
+        } else if (i + 1 === num) {
+          item.classList.add('active');
+        }
+      });
+    }
+
+    // === Load drama data from URL ===
+    function loadDramaData() {
+      const params = new URLSearchParams(window.location.search);
+      const title = params.get('title') || '';
+      document.getElementById('editDramaName').value = title || '未指定短剧';
+      document.getElementById('dramaTitleBadge').textContent = '📺 正在编辑：' + (title || '—');
+
+      if (title) {
+        // Simulate loading existing data based on known dramas
+        const dramaDatabase = {
+          '长安如梦': { cover: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80', desc: '温婉端庄的江南女子，琴棋书画样样精通。古装爱情短剧，讲述一段跨越阶级的感人故事。', tags: ['古装', '爱情'] },
+          '江南烟雨': { cover: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=80', desc: '江南水乡的浪漫邂逅，一段关于家族恩怨与儿女情长的故事。', tags: ['古装', '剧情'] },
+
+          '星际迷航': { cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=900&q=80', desc: '在遥远的星际殖民时代，一段跨越光年的人性与AI觉醒之旅。', tags: ['科幻', '冒险'] },
+          '迷雾之城': { cover: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=80', desc: '迷雾笼罩的城市里，每一条线索都指向过去的真相，一起揭开扑朔迷离的秘密。', tags: ['悬疑', '推理'] },
+        };
+        // Always start from dramaDatabase defaults (ignores stale localStorage cache)
+        const drama = dramaDatabase[title];
+        if (drama) {
+          applyDramaData(drama);
+        }
+      }
+    }
+
+    function applyDramaData(data) {
+      if (data.cover) {
+        // Pre-populate the upload zone with the existing cover
+        const zone = document.getElementById('coverUploadZone');
+        zone.innerHTML = '<div style="display:flex;align-items:center;gap:16px;justify-content:center;">'
+          + '<img src="' + data.cover + '" style="width:100px;height:70px;border-radius:12px;object-fit:cover;border:1px solid var(--border);" />'
+          + '<div style="text-align:left;"><p style="color:var(--accent);font-weight:600;margin:0;font-size:0.95rem;">当前封面</p>'
+          + '<p style="color:var(--text-muted);font-size:0.85rem;margin:4px 0 0;">点击重新上传</p></div></div>';
+        zone.insertAdjacentHTML('beforeend', '<input type="file" id="coverFileInput" accept="image/*" />');
+        document.getElementById('coverFileInput').addEventListener('change', (e) => {
+          if (e.target.files.length > 0) { handleCoverFile(e.target.files[0]); e.target.value = ''; }
+        });
+        coverUploadData.dataUrl = data.cover;
+      }
+      if (data.desc) {
+        document.getElementById('editDescription').value = data.desc;
+        updateDescCount();
+      }
+      if (data.tags) {
+        data.tags.forEach(tag => {
+          document.querySelectorAll('.tag-option').forEach(el => {
+            if (el.dataset.tag === tag) el.classList.add('selected');
+          });
+        });
+      }
+    }
+
+    // === Cover file upload (drag & drop + file picker) ===
+    const coverUploadData = { dataUrl: null };
+
+    function setupCoverUpload() {
+      const zone = document.getElementById('coverUploadZone');
+      const input = document.getElementById('coverFileInput');
+
+      // Drag & drop visual feedback
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => { zone.classList.remove('drag-over'); });
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) {
+          handleCoverFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      // File picker
+      input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleCoverFile(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+    }
+
+    function handleCoverFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('请选择图片文件');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        coverUploadData.dataUrl = e.target.result;
+        // Update the upload zone's look to show success state
+        const zone = document.getElementById('coverUploadZone');
+        zone.style.borderColor = 'var(--accent)';
+        zone.style.background = 'rgba(0, 0, 0,0.06)';
+        // Replace zone text with preview
+        zone.innerHTML = '<div style="display:flex;align-items:center;gap:16px;justify-content:center;">'
+          + '<img src="' + e.target.result + '" style="width:100px;height:70px;border-radius:12px;object-fit:cover;border:1px solid var(--border);" />'
+          + '<div style="text-align:left;"><p style="color:var(--accent);font-weight:600;margin:0;font-size:0.95rem;">✅ 已选择封面</p>'
+          + '<p style="color:var(--text-muted);font-size:0.85rem;margin:4px 0 0;">' + file.name + '</p></div></div>';
+        // Add a hidden input for re-upload
+        zone.insertAdjacentHTML('beforeend', '<input type="file" id="coverFileInput" accept="image/*" />');
+        document.getElementById('coverFileInput').addEventListener('change', (e) => {
+          if (e.target.files.length > 0) { handleCoverFile(e.target.files[0]); e.target.value = ''; }
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function getCoverUrl() {
+      return coverUploadData.dataUrl || '';
+    }
+
+    function updateDescCount() {
+      const el = document.getElementById('editDescription');
+      const count = el.value.length;
+      document.getElementById('descCharCount').textContent = count + '/500';
+    }
+
+    // === Tag selection ===
+    document.addEventListener('click', function(e) {
+      const tag = e.target.closest('.tag-option');
+      if (!tag) return;
+      const selected = document.querySelectorAll('.tag-option.selected');
+      if (tag.classList.contains('selected')) {
+        tag.classList.remove('selected');
+      } else if (selected.length < 5) {
+        tag.classList.add('selected');
+      } else {
+        showToast('最多选择 5 个标签');
+      }
+    });
+
+
+    // === Batch Video Upload Engine (from publish.html) ===
+    const batchUpload = {
+      files: [],
+      idCounter: 0,
+      isUploading: false,
+      dragId: null,
+      dragOverId: null,
+
+      init() {
+        const zone = document.getElementById('batchUploadZone');
+        const input = document.getElementById('videoFileInput');
+
+        zone.addEventListener('click', (e) => {
+          if (e.target.tagName !== 'INPUT') input.click();
+        });
+
+        input.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            this.addFiles(e.target.files);
+            input.value = '';
+          }
+        });
+
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zone.classList.remove('drag-over');
+          if (e.dataTransfer.files.length > 0) this.addFiles(e.dataTransfer.files);
+        });
+
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+      },
+
+      addFiles(fileList) {
+        const validFiles = [];
+        const maxSize = 3 * 1024 * 1024 * 1024;
+
+        for (const file of fileList) {
+          const isVideo = file.type.startsWith('video/') || /\.(mp4|flv|wmv|asf|mkv|avi|rm|rmvb|mpg|mpeg|mov|webm)$/i.test(file.name);
+          if (!isVideo) {
+            this.showToast(`"${file.name}" 不是视频文件，已跳过`);
+            continue;
+          }
+          if (file.size > maxSize) {
+            this.showToast(`"${file.name}" 超过 3GB 限制，已跳过`);
+            continue;
+          }
+          validFiles.push(file);
+        }
+
+        if (validFiles.length === 0) return;
+
+        validFiles.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN', { numeric: true }));
+
+        const newItems = validFiles.map(file => ({
+          id: ++this.idCounter,
+          file,
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          originalName: file.name,
+          size: file.size,
+          type: file.type,
+          title: '',
+          order: this.files.length + 1,
+          status: 'waiting',
+          progress: 0,
+          url: null,
+          duration: null,
+          thumbUrl: null,
+        }));
+
+        newItems.forEach((item, i) => { item.order = this.files.length + i + 1; });
+        this.files = this.files.concat(newItems);
+
+        // Generate thumbnails
+        newItems.forEach(item => this.generateThumbnail(item.file, item.id));
+
+        this.render();
+        this.showToast(`已添加 ${newItems.length} 个视频文件`);
+        this.startAllUpload();
+      },
+
+      removeFile(id) {
+        const file = this.files.find(f => f.id === id);
+        if (!file) return;
+        if (!confirm(`确定要删除第 ${file.order} 集"${file.title || file.name}"吗？`)) return;
+        this.files = this.files.filter(f => f.id !== id);
+        this.reorder();
+        this.render();
+      },
+
+      removeAll() {
+        if (this.files.length === 0) return;
+        if (!confirm('确定要清空所有已添加的视频吗？')) return;
+        this.files = [];
+        this.render();
+      },
+
+      reorder() {
+        this.files.forEach((f, i) => f.order = i + 1);
+      },
+
+      sortByName() {
+        this.files.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN', { numeric: true }));
+        this.reorder();
+        this.render();
+      },
+
+      setTitle(id, title) {
+        const file = this.files.find(f => f.id === id);
+        if (file) file.title = title;
+      },
+
+      replaceFile(id) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/mp4,video/quicktime,video/x-msvideo,video/*';
+        input.style.display = 'none';
+        input.addEventListener('change', (e) => {
+          if (e.target.files.length === 0) return;
+          const file = e.target.files[0];
+          const isVideo = file.type.startsWith('video/') || /\.(mp4|flv|wmv|asf|mkv|avi|rm|rmvb|mpg|mpeg|mov|webm)$/i.test(file.name);
+          if (!isVideo) { this.showToast(`"${file.name}" 不是视频文件`); return; }
+          if (file.size > 3 * 1024 * 1024 * 1024) { this.showToast(`"${file.name}" 超过 3GB 限制`); return; }
+          const item = this.files.find(f => f.id === id);
+          if (!item) return;
+          item.file = file;
+          item.name = file.name.replace(/\.[^/.]+$/, '');
+          item.originalName = file.name;
+          item.size = file.size;
+          item.type = file.type;
+          item.status = 'waiting';
+          item.progress = 0;
+          item.url = null;
+          item.thumbUrl = null;
+          item.duration = null;
+          this.generateThumbnail(file, id);
+          this.render();
+          this.showToast(`已替换为 "${file.name}"`);
+          this.startAllUpload();
+        });
+        document.body.appendChild(input);
+        input.click();
+        setTimeout(() => input.remove(), 1000);
+      },
+
+      formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+      },
+
+      formatDuration(seconds) {
+        if (!seconds) return '';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+      },
+
+      generateThumbnail(file, id) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.onloadeddata = () => {
+          const item = this.files.find(f => f.id === id);
+          if (item) item.duration = video.duration || null;
+          const canvas = document.createElement('canvas');
+          canvas.width = 160;
+          canvas.height = 90;
+          canvas.getContext('2d').drawImage(video, 0, 0, 160, 90);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          if (item) item.thumbUrl = dataUrl;
+          this.renderThumbnail(id, dataUrl);
+          this.render();
+          this.updateStats();
+          video.remove();
+          URL.revokeObjectURL(video.src);
+        };
+        video.onerror = () => { video.remove(); URL.revokeObjectURL(video.src); };
+        video.src = URL.createObjectURL(file);
+        video.currentTime = 1;
+      },
+
+      renderThumbnail(id, dataUrl) {
+        const el = document.querySelector(`[data-file-id="${id}"] .thumb`);
+        if (!el) return;
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = '';
+        const badge = el.querySelector('.file-type-badge');
+        el.innerHTML = '';
+        el.appendChild(img);
+        if (badge) el.appendChild(badge);
+      },
+
+      async uploadFile(item) {
+        if (item.status === 'done' || item.status === 'uploading') return;
+        item.status = 'uploading';
+        item.progress = 0;
+        item.uploadedBytes = 0;
+        this.render();
+
+        const totalSteps = 20;
+        for (let i = 1; i <= totalSteps; i++) {
+          await new Promise(r => setTimeout(r, 120 + Math.random() * 180));
+          const pct = Math.min(i / totalSteps, 0.99);
+          item.progress = Math.round(pct * 100);
+          item.uploadedBytes = Math.round(item.size * pct);
+          this.updateItemProgress(item);
+        }
+
+        item.status = 'done';
+        item.progress = 100;
+        item.uploadedBytes = item.size;
+        item.url = URL.createObjectURL(item.file);
+        this.render();
+        this.updateStats();
+      },
+
+      updateItemProgress(item) {
+        const el = document.querySelector(`[data-file-id="${item.id}"]`);
+        if (!el) return;
+        const fill = el.querySelector('.progress-fill');
+        const badge = el.querySelector('.status-badge');
+        if (fill) fill.style.width = item.progress + '%';
+        if (badge) { badge.className = 'status-badge uploading'; badge.textContent = '上传中'; }
+        const progressTextEl = el.querySelector('.progress-text');
+        if (progressTextEl) {
+          progressTextEl.textContent = `${this.formatSize(item.uploadedBytes || 0)} / ${this.formatSize(item.size)}`;
+        }
+      },
+
+      async startAllUpload() {
+        const pending = this.files.filter(f => f.status === 'waiting' || f.status === 'failed');
+        if (pending.length === 0) return;
+        this.isUploading = true;
+        for (const item of pending) {
+          await this.uploadFile(item);
+        }
+        this.isUploading = false;
+      },
+
+      retryUpload(id) {
+        const item = this.files.find(f => f.id === id);
+        if (item && item.status === 'failed') { item.progress = 0; this.uploadFile(item); }
+      },
+
+      updateStats() {
+        const total = this.files.length;
+        const done = this.files.filter(f => f.status === 'done').length;
+        const failed = this.files.filter(f => f.status === 'failed').length;
+        const el = document.getElementById('uploadStats');
+        if (total === 0) { el.textContent = ''; }
+        else if (done === total) { el.textContent = `✅ ${done}/${total} 上传完成`; }
+        else {
+          let text = `📊 ${done}/${total} 上传完成`;
+          if (failed > 0) text += `, ⚠️ ${failed} 失败`;
+          el.textContent = text;
+        }
+      },
+
+      render() {
+        const container = document.getElementById('queueItems');
+        const queueEl = document.getElementById('uploadQueue');
+        const emptyEl = document.getElementById('queueEmpty');
+        const toolbar = document.getElementById('batchToolbar');
+        const countEl = document.getElementById('queueCount');
+
+        if (this.files.length === 0) {
+          queueEl.style.display = 'none';
+          emptyEl.style.display = 'block';
+          toolbar.style.display = 'none';
+          return;
+        }
+
+        queueEl.style.display = 'block';
+        emptyEl.style.display = 'none';
+        toolbar.style.display = 'flex';
+        countEl.textContent = `(${this.files.length} 个文件)`;
+        container.innerHTML = this.files.map(item => this.renderItemHTML(item)).join('');
+        this.attachDragEvents();
+        this.updateStats();
+      },
+
+      attachDragEvents() {
+        const container = document.getElementById('queueItems');
+
+        container.addEventListener('dragstart', (e) => {
+          const item = e.target.closest('.upload-item');
+          if (!item) return;
+          this.dragId = parseInt(item.dataset.fileId);
+          item.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', item.dataset.fileId);
+        });
+
+        container.addEventListener('dragend', (e) => {
+          const item = e.target.closest('.upload-item');
+          if (item) item.classList.remove('dragging');
+          document.querySelectorAll('.upload-item.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
+          this.dragId = null;
+          this.dragOverId = null;
+        });
+
+        container.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+
+          const target = e.target.closest('.upload-item');
+          if (!target) return;
+          const targetId = parseInt(target.dataset.fileId);
+          if (targetId === this.dragId) return;
+
+          // Determine if the mouse is in the upper or lower half of the target
+          const rect = target.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+          const threshold = rect.height / 2;
+
+          // Only add visual feedback when we would actually swap
+          document.querySelectorAll('.upload-item.drag-over-target').forEach(el => {
+            if (el !== target) el.classList.remove('drag-over-target');
+          });
+
+          if (y < threshold) {
+            target.classList.add('drag-over-target');
+            this.dragOverId = targetId;
+          } else {
+            target.classList.remove('drag-over-target');
+            this.dragOverId = targetId;
+          }
+        });
+
+        container.addEventListener('dragleave', (e) => {
+          const target = e.target.closest('.upload-item');
+          if (target) target.classList.remove('drag-over-target');
+        });
+
+        container.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const target = e.target.closest('.upload-item');
+          if (!target) return;
+
+          document.querySelectorAll('.upload-item.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
+          document.querySelectorAll('.upload-item.dragging').forEach(el => el.classList.remove('dragging'));
+
+          const targetId = parseInt(target.dataset.fileId);
+          const dragId = this.dragId;
+          if (!dragId || dragId === targetId) return;
+
+          // Find indices
+          const dragIndex = this.files.findIndex(f => f.id === dragId);
+          const targetIndex = this.files.findIndex(f => f.id === targetId);
+          if (dragIndex === -1 || targetIndex === -1) return;
+
+          // Reorder the array
+          const [movedItem] = this.files.splice(dragIndex, 1);
+          const newTargetIndex = this.files.findIndex(f => f.id === targetId);
+          this.files.splice(newTargetIndex, 0, movedItem);
+          this.reorder();
+          this.render();
+
+          this.dragId = null;
+          this.dragOverId = null;
+        });
+      },
+
+
+      renderItemHTML(item) {
+        const statusText = { waiting: '等待上传', uploading: '上传中', done: '上传完成', failed: '上传失败' };
+        const statusClass = item.status;
+        const episodeNum = item.order;
+        const ext = item.originalName.split('.').pop().toUpperCase();
+
+        const thumbContent = item.thumbUrl
+          ? `<img src="${item.thumbUrl}" alt="" /><span class="file-type-badge">${ext}</span>`
+          : `<span style="font-size:1.6rem;">🎬</span><span class="file-type-badge">${ext}</span>`;
+
+        const progressHTML = (item.status === 'uploading')
+          ? `<div class="progress-bar"><div class="progress-fill" style="width:${item.progress}%"></div></div>`
+          : (item.status === 'done')
+            ? `<div class="progress-bar"><div class="progress-fill done" style="width:100%"></div></div>`
+            : (item.status === 'failed')
+              ? `<div class="progress-bar"><div class="progress-fill error" style="width:100%"></div></div>`
+              : '';
+
+        const progressText = (item.status === 'uploading')
+          ? `<span class="progress-text">${this.formatSize(item.uploadedBytes || 0)} / ${this.formatSize(item.size)}</span>`
+          : '';
+
+        const dragHandle = `<span class="drag-handle" draggable="true">⠿</span>`;
+
+        return `<div class="upload-item" data-file-id="${item.id}" draggable="true">
+          ${dragHandle}
+          <span class="episode-num">${episodeNum}</span>
+          <div class="thumb">${thumbContent}</div>
+          <div class="info">
+        <div class="name">
+          <span style="font-size:0.78rem;color:var(--text-muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px;">${this.escapeHtml(item.originalName)}</span>
+        </div>
+            <div class="meta">
+              <span class="file-size">${this.formatSize(item.size)}</span>
+              ${item.duration ? `<span class="duration">⏱ ${this.formatDuration(item.duration)}</span>` : ''}
+              ${progressText}
+              <span class="status-badge ${statusClass}">${statusText[item.status]}</span>
+            </div>
+            ${progressHTML}
+        <span class="title-edit"><input type="text" value="${this.escapeHtml(item.title || '')}" placeholder="分集描述" onchange="batchUpload.setTitle(${item.id}, this.value)" /></span>
+          </div>
+          <div class="item-actions">
+            ${item.status === 'failed' ? `<button class="btn-icon" title="重试" onclick="batchUpload.retryUpload(${item.id})">↻</button>` : ''}
+            <button class="btn-icon" title="替换视频" onclick="batchUpload.replaceFile(${item.id})">🔄</button>
+            <button class="btn-icon danger" title="删除" onclick="batchUpload.removeFile(${item.id})">✕</button>
+          </div>
+        </div>`;
+      },
+
+      escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      },
+
+      showToast(msg) {
+        const existing = document.querySelector('.edit-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'edit-toast';
+        toast.textContent = msg;
+        Object.assign(toast.style, {
+          position: 'fixed', bottom: '24px', left: '50%',
+          transform: 'translateX(-50%) translateY(100px)',
+          background: 'rgba(26,35,47,0.92)', backdropFilter: 'blur(8px)',
+          color: '#fff', padding: '12px 24px', borderRadius: '14px',
+          fontSize: '0.92rem', boxShadow: '0 8px 32px rgba(27,45,71,0.25)',
+          zIndex: '10000', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
+          opacity: '0', maxWidth: '400px', textAlign: 'center', fontWeight: '500',
+        });
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; toast.style.opacity = '1'; });
+        setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(100px)'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 2500);
+      },
+    };
+
+
+    // === Submit edit ===
+    function submitEdit() {
+      const name = document.getElementById('editDramaName').value;
+      const cover = getCoverUrl();
+      const desc = document.getElementById('editDescription').value.trim();
+      const tags = Array.from(document.querySelectorAll('.tag-option.selected')).map(el => el.dataset.tag);
+
+      // Save to localStorage
+      const data = { cover, desc, tags };
+      try {
+        localStorage.setItem('editDrama_' + name, JSON.stringify(data));
+      } catch(e) {}
+
+      showToast('✅ 修改已保存，正在返回...');
+      setTimeout(() => { window.location.href = 'narrator.html'; }, 800);
+    }
+
+    // === Toast ===
+    function showToast(msg) {
+      const existing = document.querySelector('.edit-toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.className = 'edit-toast';
+      toast.textContent = msg;
+      Object.assign(toast.style, {
+        position: 'fixed', bottom: '24px', left: '50%',
+        transform: 'translateX(-50%) translateY(100px)',
+        background: 'rgba(26,35,47,0.92)', backdropFilter: 'blur(8px)',
+        color: '#fff', padding: '12px 24px', borderRadius: '14px',
+        fontSize: '0.92rem', boxShadow: '0 8px 32px rgba(27,45,71,0.25)',
+        zIndex: '10000', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
+        opacity: '0', maxWidth: '400px', textAlign: 'center', fontWeight: '500',
+      });
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; toast.style.opacity = '1'; });
+      setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(100px)'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 2500);
+    }
+
+    // === Init ===
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('editDescription').addEventListener('input', updateDescCount);
+      loadDramaData();
+      setupCoverUpload();
+      batchUpload.init();
+
+      // 恢复上次未完成的草稿
+      try {
+        const draft = JSON.parse(localStorage.getItem('edit_draft') || 'null');
+        if (draft && draft.from === 'edit') {
+          localStorage.removeItem('edit_draft');
+          const dEl = document.getElementById('editDescription');
+          if (draft.desc && dEl) dEl.value = draft.desc;
+          if (draft.cover) {
+            coverUploadData.dataUrl = draft.cover;
+            const zone = document.getElementById('coverUploadZone');
+            if (zone) {
+              zone.innerHTML = '<div style="display:flex;align-items:center;gap:16px;justify-content:center;"><img src="' + draft.cover + '" style="width:100px;height:70px;border-radius:12px;object-fit:cover;border:1px solid var(--border);" /><div style="text-align:left;"><p style="color:var(--accent);font-weight:600;margin:0;font-size:0.95rem;">✅ 已恢复封面</p></div></div>';
+              zone.insertAdjacentHTML('beforeend', '<input type="file" id="coverFileInput" accept="image/*" />');
+              document.getElementById('coverFileInput').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) { handleCoverFile(e.target.files[0]); e.target.value = ''; }
+              });
+            }
+          }
+          (draft.tags || []).forEach(tag => {
+            document.querySelectorAll('#step1 .tag-option').forEach(el => {
+              if (el.dataset.tag === tag) el.classList.add('selected');
+            });
+          });
+          showToast('已恢复草稿');
+        }
+      } catch (e) {}
+    });
+  </script>
+
+  <div id="bottom-nav-placeholder"></div>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storyfun | 功能概览</title>
+  <link rel="stylesheet" href="admin-shared.css" />
+  <style>
+    .fn-row td:last-child { text-align: right; }
+    .fn-detail-hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="admin-sidebar-placeholder"></div>
+  <div class="app-shell">
+    <div class="page-header">
+      <div>
+        <h1>🧩 功能概览</h1>
+        <div class="sub">以“人”为单位的功能参与率（发射/买入/卖出分母 = 注册用户）· 点击行查看明细</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>功能</th>
+              <th>参与口径</th>
+              <th class="num">参与人数</th>
+              <th class="num">分母</th>
+              <th class="num">参与率</th>
+              <th>下钻</th>
+            </tr>
+          </thead>
+          <tbody id="fnBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-card fn-detail-hidden" id="detailCard">
+      <div class="card-title"><span id="detailTitle">—</span>
+        <span class="hint" id="detailHint"></span>
+        <button class="btn-reset" onclick="exportDetail()">导出 CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="num">UID</th>
+              <th style="min-width:170px;">钱包地址</th>
+              <th class="num">参与次数</th>
+              <th class="num">首次参与时间</th>
+              <th class="num">最后参与时间</th>
+            </tr>
+          </thead>
+          <tbody id="detBody"></tbody>
+        </table>
+      </div>
+      <div class="table-total" id="detTotal"></div>
+    </div>
+  </div>
+
+  <script src="load-admin-sidebar.js"></script>
+  <script src="admin-mock-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var M = window.SFMock; if (!M) return;
+      var users = M.users || [];
+      var fmtNum = M.helpers.fmtNum, fmtTs = M.helpers.fmtTs, pct = M.helpers.pct;
+      var H = { register: [], watch: [], report: [], dislike: [], publish: [], launch: [], buy: [], sell: [] };
+
+      // 参与者集合（确定性演示）：注册=全体；观看≈2/3；举报⊂观看；不感兴趣⊂观看；发布=isCreator；发射=isLauncher；买卖按 uid 采样
+      users.forEach(function (u) {
+        H.register.push(u);
+        var watch = (u.uid % 3) !== 0;
+        if (watch) {
+          H.watch.push(u);
+          if (u.uid % 9 === 0) H.report.push(u);
+          if (u.uid % 7 === 0) H.dislike.push(u);
+        }
+        if (u.isCreator) H.publish.push(u);
+        if (u.isLauncher) H.launch.push(u);
+        if (u.uid % 5 === 0) H.buy.push(u);
+        if (u.uid % 13 === 0) H.sell.push(u);
+      });
+
+      var FNS = [
+        { id: 'register', name: '注册', def: '完成注册', den: 'PV（注册入口访问量）', n: H.register.length, d: Math.round(users.length * 4.6) },
+        { id: 'watch', name: '观看', def: '观看任一内容单元 ≥1 次', den: '注册用户', n: H.watch.length, d: users.length },
+        { id: 'report', name: '举报', def: '举报内容 ≥1 次', den: '观看用户', n: H.report.length, d: H.watch.length },
+        { id: 'dislike', name: '不感兴趣', def: '标记 ≥1 次', den: '观看用户', n: H.dislike.length, d: H.watch.length },
+        { id: 'publish', name: '发布内容', def: '发布 ≥1 个内容单元', den: '注册用户', n: H.publish.length, d: users.length },
+        { id: 'launch', name: '发射代币', def: '发射 ≥1 个币', den: '注册用户', n: H.launch.length, d: users.length },
+        { id: 'buy', name: '买入代币', def: '买入成交 ≥1 笔', den: '注册用户', n: H.buy.length, d: users.length },
+        { id: 'sell', name: '卖出代币', def: '卖出成交 ≥1 笔', den: '注册用户', n: H.sell.length, d: users.length },
+      ];
+
+      var cur = null, page = 1, PER = 20;
+
+      function userDetail(u, base) {
+        var times = Math.max(1, (u.uid % 4) + 1);
+        var first = u.regTs + (u.uid % 17) * 3600000;
+        return { uid: u.uid, addr: u.addr, times: times, first: first, last: first + times * 7200000 + (u.uid % 5) * 86400000 };
+      }
+
+      function renderDetail() {
+        if (!cur) return;
+        var rows = (H[cur.id] || []).map(function (u) { return userDetail(u); });
+        var pages = Math.max(1, Math.ceil(rows.length / PER));
+        page = Math.min(page, pages);
+        var start = (page - 1) * PER;
+        var slice = rows.slice(start, start + PER);
+        document.getElementById('detailTitle').textContent = cur.name + ' · 参与用户';
+        document.getElementById('detailHint').textContent = '时间区间可在生产版支持；此处按服务端分页口径展示（每页 ' + PER + '）';
+        document.getElementById('detBody').innerHTML = slice.map(function (r) {
+          return '<tr>' +
+            '<td class="num">' + r.uid + '</td>' +
+            '<td class="mono" title="' + r.addr + '">' + (r.addr.length > 18 ? r.addr.slice(0, 10) + '…' + r.addr.slice(-6) : r.addr) + '</td>' +
+            '<td class="num">' + r.times + '</td>' +
+            '<td class="num">' + fmtTs(r.first) + '</td>' +
+            '<td class="num">' + fmtTs(r.last) + '</td>' +
+            '</tr>';
+        }).join('');
+        var prev = page <= 1 ? 'disabled' : '', next = page >= pages ? 'disabled' : '';
+        document.getElementById('detTotal').innerHTML =
+          '<span>共 <b>' + rows.length + '</b> 人</span>' +
+          '<span><button class="btn-reset" ' + prev + ' onclick="pg(-1)">← 上一页</button> 第 ' + page + ' / ' + pages + ' 页 <button class="btn-reset" ' + next + ' onclick="pg(1)">下一页 →</button></span>';
+        window._detRows = rows;
+      }
+
+      window.openDetail = function (id) {
+        cur = FNS.filter(function (f) { return f.id === id; })[0];
+        page = 1;
+        document.getElementById('detailCard').classList.remove('fn-detail-hidden');
+        renderDetail();
+      };
+      window.pg = function (d) { page += d; renderDetail(); };
+      window.exportDetail = function () {
+        var rows = window._detRows || [];
+        if (!rows.length) { alert('暂无明细'); return; }
+        var csv = 'uid,钱包,参与次数,首次参与时间,最后参与时间\n' + rows.map(function (r) {
+          return [r.uid, r.addr, r.times, fmtTs(r.first), fmtTs(r.last)].join(',');
+        }).join('\n');
+        var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (cur ? cur.id : 'detail') + '.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      };
+
+      // 渲染功能表
+      var total = users.length || 1;
+      document.getElementById('fnBody').innerHTML = FNS.map(function (f) {
+        var rate = f.id === 'register' ? (f.n / f.d * 100).toFixed(2) + '%' : pct(f.n, f.d);
+        return '<tr class="fn-row">' +
+          '<td><strong>' + f.name + '</strong></td>' +
+          '<td class="weak">' + f.def + '</td>' +
+          '<td class="num">' + fmtNum(f.n) + '</td>' +
+          '<td class="num">' + fmtNum(f.d) + '<span class="weak"> · ' + f.den + '</span></td>' +
+          '<td class="num"><span class="tag-pct">' + rate + '</span></td>' +
+          '<td><button class="btn-mini" style="padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-size:.76rem;cursor:pointer;" onclick="openDetail(\'' + f.id + '\')">查看明细</button></td>' +
+          '</tr>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

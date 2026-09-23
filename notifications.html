@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>通知消息</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f8f9fb;
+  --surface:#fff;
+  --accent:#000000;
+  --accent-dim:rgba(0, 0, 0,.08);
+  --text:#1a1a2e;
+  --text-secondary:#5e6f83;
+  --text-muted:#8896a8;
+  --border:#eef0f4;
+  --danger:#f45b69;
+  font-family:"PingFang SC","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+html,body{width:100%;height:100%;background:var(--bg);-webkit-tap-highlight-color:transparent}
+.app{max-width:500px;margin:0 auto;height:100vh;background:var(--surface);display:flex;flex-direction:column;box-shadow:0 0 30px rgba(0,0,0,.04)}
+
+/* Top Bar */
+.top-bar{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 16px;padding-top:env(safe-area-inset-top,0);border-bottom:.5px solid var(--border);flex-shrink:0}
+.top-bar .back-btn{width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.04);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.top-bar .back-btn:active{background:rgba(0,0,0,.08)}
+.top-title{font-size:16px;font-weight:600;color:var(--text);text-align:center;flex:1}
+.top-bar .top-spacer{width:32px;flex-shrink:0}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none;border-bottom:.5px solid var(--border)}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{padding:5px 14px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Scroll */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 0}
+.scroll::-webkit-scrollbar{width:0}
+
+/* ── Notification Card ── */
+.notify-item{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  padding:14px 16px 10px;
+  position:relative;
+  background:var(--surface);
+  border-radius:12px;
+  box-shadow:0 1px 4px rgba(0,0,0,.03);
+  margin:0 12px 10px;
+  transition:box-shadow .15s;
+}
+.notify-item:active{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+
+/* Unread dot */
+.notify-item.unread::before{
+  content:'';
+  position:absolute;
+  left:9px;
+  top:21px;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#ff2d55;
+}
+
+/* Left icon area */
+.notify-icon{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+}
+.notify-icon.avatar{overflow:hidden;background:#f0f2f5}
+.notify-icon.avatar img{width:100%;height:100%;object-fit:cover}
+
+/* Content */
+.notify-content{flex:1;min-width:0}
+.notify-desc{font-size:14px;color:var(--text);line-height:1.5;font-weight:500}
+.notify-desc strong{font-weight:700}
+.notify-meta{font-size:12px;color:var(--text-muted);margin-top:3px}
+.notify-time{font-size:11px;color:var(--text-muted);opacity:.7;margin-top:2px}
+
+/* Thumbnail — right side of social cards */
+.notify-thumb{
+  width:44px;
+  height:44px;
+  border-radius:8px;
+  flex-shrink:0;
+  overflow:hidden;
+  background:#f0f2f5;
+}
+.notify-thumb img{width:100%;height:100%;object-fit:cover}
+
+/* Social content row — icon + text + thumb */
+.social-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex:1;
+}
+
+/* Footer bar — "···" at bottom right */
+.notify-footer{
+  position:relative;
+  display:flex;
+  justify-content:flex-end;
+  margin-top:8px;
+}
+
+/* Social action buttons — comment card */
+.social-actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.social-actions .sact-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:5px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:12px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .15s;
+}
+.social-actions .sact-btn:active{background:rgba(0,0,0,.03)}
+
+/* Follow button */
+.follow-btn{
+  flex-shrink:0;
+  padding:5px 14px;
+  border-radius:999px;
+  border:1px solid var(--accent);
+  background:transparent;
+  color:var(--accent);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .15s;
+  white-space:nowrap;
+}
+.follow-btn:active{background:var(--accent-dim)}
+.follow-btn.followed{
+  background:var(--accent-dim);
+  color:var(--accent);
+  border-color:transparent;
+}
+.follow-btn.mutual{
+  background:var(--accent-dim);
+  color:var(--accent);
+  border-color:transparent;
+}
+
+/* More button */
+.notify-more{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:none;
+  background:transparent;
+  color:var(--text-muted);
+  font-size:15px;
+  cursor:pointer;
+  letter-spacing:1px;
+  transition:background .15s;
+}
+.notify-more:active{background:rgba(0,0,0,.04)}
+
+/* Delete dropdown — expands downward */
+.delete-dropdown{
+  position:absolute;
+  top:100%;
+  right:0;
+  margin-top:4px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:0 6px 20px rgba(0,0,0,.08);
+  padding:4px 0;
+  min-width:80px;
+  z-index:3;
+  display:none;
+  text-align:center;
+}
+.delete-dropdown.show{display:block}
+.delete-dropdown .delete-btn{
+  display:block;
+  width:100%;
+  padding:8px 16px;
+  border:none;
+  background:transparent;
+  color:var(--danger);
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  transition:background .15s;
+  border-radius:0;
+}
+.delete-dropdown .delete-btn:active{background:rgba(244,91,105,.06)}
+
+/* Empty state */
+.notify-empty{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:80px 20px;
+  color:var(--text-muted);
+  gap:12px;
+}
+.notify-empty .empty-icon{font-size:40px;opacity:.3}
+.notify-empty p{font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="back-btn" onclick="history.back()">‹</button>
+    <div class="top-title">通知消息</div>
+    <div class="top-spacer"></div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-chip active" data-sotype="all">全部</button>
+    <button class="filter-chip" data-sotype="like">点赞</button>
+    <button class="filter-chip" data-sotype="save">收藏</button>
+    <button class="filter-chip" data-sotype="comment">评论</button>
+    <button class="filter-chip" data-sotype="follow">关注</button>
+  </div>
+
+  <!-- List -->
+  <div class="scroll">
+
+    <!-- 1a. 点赞视频 -->
+    <div class="notify-item unread" data-sotype="like">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>李云飞</strong></div>
+          <div class="notify-desc" style="font-weight:400">赞了你的视频</div>
+          <div class="notify-time">18分钟前</div>
+        </div>
+        <div class="notify-thumb"><img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=200&q=80" alt=""></div>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 1b. 点赞短剧 -->
+    <div class="notify-item unread" data-sotype="like">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>苏婉清</strong></div>
+          <div class="notify-desc" style="font-weight:400">赞了你的短剧 《凤骨琉璃》</div>
+          <div class="notify-time">42分钟前</div>
+        </div>
+        <div class="notify-thumb"><img src="https://images.unsplash.com/photo-1512070679279-8988d32161be?auto=format&fit=crop&w=200&q=80" alt=""></div>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 2a. 收藏视频 -->
+    <div class="notify-item unread" data-sotype="save">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>林梦瑶</strong></div>
+          <div class="notify-desc" style="font-weight:400">收藏了你的视频</div>
+          <div class="notify-time">1小时前</div>
+        </div>
+        <div class="notify-thumb"><img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=200&q=80" alt=""></div>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 2b. 收藏短剧 -->
+    <div class="notify-item unread" data-sotype="save">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>苏婉清</strong></div>
+          <div class="notify-desc" style="font-weight:400">收藏了你的短剧 《凤骨琉璃》</div>
+          <div class="notify-time">42分钟前</div>
+        </div>
+        <div class="notify-thumb"><img src="https://images.unsplash.com/photo-1512070679279-8988d32161be?auto=format&fit=crop&w=200&q=80" alt=""></div>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 3. 收到评论 -->
+    <div class="notify-item unread" data-sotype="comment">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>赵无极</strong></div>
+          <div class="notify-desc" style="font-weight:400">评论了你：剧情太精彩了，期待下一集！</div>
+          <div class="notify-time">1小时前</div>
+        </div>
+        <div class="notify-thumb"><img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=200&q=80" alt=""></div>
+      </div>
+      <div class="social-actions">
+        <button class="sact-btn">回复评论</button>
+        <button class="sact-btn">♡ 赞</button>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 4a. 互相关注 -->
+    <div class="notify-item unread" data-sotype="follow">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>苏婉清</strong></div>
+          <div class="notify-desc" style="font-weight:400">关注了你</div>
+          <div class="notify-time">5小时前</div>
+        </div>
+        <button class="follow-btn mutual" onclick="toggleFollow(this)">互关</button>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+    <!-- 4b. 有人关注我 -->
+    <div class="notify-item unread" data-sotype="follow">
+      <div class="social-row">
+        <div class="notify-icon avatar"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80" alt=""></div>
+        <div class="notify-content">
+          <div class="notify-desc"><strong>林梦瑶</strong></div>
+          <div class="notify-desc" style="font-weight:400">关注了你</div>
+          <div class="notify-time">3小时前</div>
+        </div>
+        <button class="follow-btn" onclick="toggleFollow(this)">关注</button>
+      </div>
+      <div class="notify-footer">
+        <button class="notify-more" onclick="toggleDelete(event,this)">···</button>
+        <div class="delete-dropdown"><button class="delete-btn" onclick="deleteNotify(event,this)">删除</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="notify-settings.js"></script>
+<script>
+// ============================================================
+//  通知列表：仅保留「互动」类通知（点赞/收藏/评论/关注）
+//  可见性 = 通知总开关 × 该类型设置 × 顶部筛选
+// ============================================================
+function applyVisibility() {
+  var activeChip = document.querySelector('#filterBar .filter-chip.active');
+  var soType = activeChip ? activeChip.dataset.sotype : 'all';
+
+  var masterOn = true;
+  if (typeof window.StoryFunNotify !== 'undefined') {
+    masterOn = !!window.StoryFunNotify.getSettings().master;
+  }
+
+  document.querySelectorAll('.notify-item').forEach(function(item) {
+    var subType = item.getAttribute('data-sotype');
+    // 1) 总开关关闭 → 全部隐藏
+    if (!masterOn) { item.style.display = 'none'; return; }
+    // 2) 该类型在设置中被关闭 → 隐藏
+    if (typeof window.StoryFunNotify !== 'undefined' && !window.StoryFunNotify.isNotifyEnabled('social', subType)) {
+      item.style.display = 'none'; return;
+    }
+    // 3) 筛选 chip 不匹配 → 隐藏
+    if (soType !== 'all' && subType !== soType) { item.style.display = 'none'; return; }
+    item.style.display = 'flex';
+  });
+
+  renderEmpty();
+}
+
+// Filter chips
+var filterBar = document.getElementById('filterBar');
+if (filterBar) {
+  filterBar.querySelectorAll('.filter-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      filterBar.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+      this.classList.add('active');
+      applyVisibility();
+    });
+  });
+}
+
+// Show empty state when no items visible
+function renderEmpty() {
+  var scroll = document.querySelector('.scroll');
+  scroll.querySelectorAll('.notify-empty').forEach(function(e) { e.remove(); });
+
+  // 总开关关闭 → 统一提示
+  if (typeof window.StoryFunNotify !== 'undefined' && !window.StoryFunNotify.getSettings().master) {
+    var emptyAll = document.createElement('div');
+    emptyAll.className = 'notify-empty';
+    emptyAll.innerHTML = '<div class="empty-icon">🔕</div><p>已关闭全部通知，可在「设置 → 通知设置」中开启</p>';
+    scroll.appendChild(emptyAll);
+    return;
+  }
+
+  var anyVisible = false;
+  document.querySelectorAll('.notify-item').forEach(function(item) {
+    if (item.style.display !== 'none') anyVisible = true;
+  });
+
+  if (!anyVisible) {
+    var empty = document.createElement('div');
+    empty.className = 'notify-empty';
+    empty.innerHTML = '<div class="empty-icon">💬</div><p>暂无互动通知</p>';
+    scroll.appendChild(empty);
+  }
+}
+
+// More / Delete
+function toggleDelete(e, btn) {
+  e.stopPropagation();
+  // Close all other dropdowns
+  document.querySelectorAll('.delete-dropdown.show').forEach(function(d) {
+    if (d.parentElement !== btn.parentElement) d.classList.remove('show');
+  });
+  var dd = btn.parentElement.querySelector('.delete-dropdown');
+  dd.classList.toggle('show');
+}
+
+function deleteNotify(e, btn) {
+  e.stopPropagation();
+  btn.closest('.notify-item').remove();
+  renderEmpty();
+}
+
+// Follow button toggle
+function toggleFollow(btn) {
+  if (btn.classList.contains('mutual')) {
+    btn.classList.remove('mutual');
+    btn.classList.add('followed');
+    btn.textContent = '已关注';
+  } else if (btn.classList.contains('followed')) {
+    btn.classList.remove('followed');
+    btn.textContent = '关注';
+  } else {
+    btn.classList.add('followed');
+    btn.textContent = '已关注';
+  }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function() {
+  document.querySelectorAll('.delete-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
+});
+
+// Initial
+applyVisibility();
+</script>
+<script src="load-sidebar.js"></script>
+  <script src="load-desktop-header.js"></script>
+</body>
+</html>

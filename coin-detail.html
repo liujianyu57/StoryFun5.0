@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>交易 · 发射台</title>
+  <link rel="stylesheet" href="launch.css" />
+  <style>
+    /* ===== 交易详情 ===== */
+    .cd-top { padding: 20px 0 4px; }
+    .cd-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-bottom: 14px; }
+    .cd-back:hover { color: var(--text); }
+    /* 币图（移入交易卡身份行，纯展示） */
+    .cd-avatar { width: 44px; height: 44px; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; }
+    .cd-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* 交易卡身份行：币图/名称/代号/Paired/曲线状态 */
+    .swap-id { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 13px; border-bottom: 1px dashed var(--border); }
+    .swap-id-main { min-width: 0; }
+    .swap-id-title { display: flex; align-items: baseline; gap: 8px; }
+    .swap-nm { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .swap-sym { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .swap-id-sub { display: flex; align-items: center; gap: 7px; margin-top: 5px; font-size: 12px; color: var(--text-2); flex-wrap: wrap; }
+    .swap-id-sub b { color: var(--text); font-weight: 600; }
+    .swap-id-dot { color: var(--border-strong); }
+    .swap-id-sub .phase { font-weight: 700; color: var(--text); }
+    .swap-id-sub .phase.up { color: var(--up); }
+    /* curve 毕业进度（pons v2-graduation 忠实还原） */
+    .v2-grad { border: 1px solid var(--border); background: var(--surface-2); border-radius: 16px; padding: 14px 16px; display: grid; gap: 8px; margin: -4px 0 14px; }
+    .v2-grad .vg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; font-weight: 800; }
+    .v2-grad .vg-head span:last-child { color: var(--text-2); font-variant-numeric: tabular-nums; font-weight: 700; }
+    .v2-grad .vg-track { background: rgba(10,11,13,.08); border-radius: 999px; height: 6px; overflow: hidden; }
+    .v2-grad .vg-fill { border-radius: inherit; background: var(--accent); height: 100%; transition: width .24s ease-out; }
+    .v2-grad .vg-note { color: var(--text-2); margin: 0; font-size: 12px; line-height: 1.5; }
+
+    .cd-stats { display: flex; gap: 34px; margin: 16px 0 4px; flex-wrap: wrap; }
+    .cd-stat .k { font-size: 12px; color: var(--text-2); }
+    .cd-stat .k .cd-fdv { color: var(--text-3); font-weight: 500; }
+    .cd-stat .v { font-size: 15px; font-weight: 700; margin-top: 2px; }
+
+
+    /* 主布局 */
+    .cd-grid { display: grid; grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: 18px; margin-top: 18px; }
+    .cd-trade { min-width: 0; }
+    .cd-market { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .cd-market .kcard { flex: 1 1 auto; }
+    .cd-bottom { display: grid; gap: 18px; margin-top: 18px; }
+    /* 交易卡（pons convert 双面板） */
+    .convert-stack { display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .convert-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
+    .convert-panel-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+    .convert-row { display: flex; align-items: center; gap: 8px; }
+    .convert-row input { flex: 1; min-width: 0; }
+    .convert-amount { flex: 1; min-width: 0; text-align: left; font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .convert-asset { height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; color: var(--text); flex-shrink: 0; }
+    .convert-asset i { font-style: normal; }
+    button.convert-asset { cursor: pointer; font-family: inherit; transition: border-color .15s ease; }
+    button.convert-asset:hover { border-color: var(--text); }
+    .convert-panel { position: relative; }
+    .faucet-mini { color: var(--text); text-decoration: underline; cursor: pointer; font-weight: 600; white-space: nowrap; }
+    .asset-pop { position: absolute; left: 8px; right: 8px; top: calc(100% - 4px); z-index: 200; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.16); padding: 6px;
+      max-height: min(430px, 62vh); overflow-y: auto; }
+    .ap-group { font-size: 10px; letter-spacing: .1em; color: var(--text-3); padding: 10px 8px 4px; text-transform: uppercase; }
+    .ap-row { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+    .ap-row:hover { background: var(--accent-soft); }
+    .ap-row.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--border); }
+    .ap-ic { width: 24px; height: 24px; border-radius: 50%; background: var(--text); color: #fff; display: grid; place-items: center;
+      font-size: 10px; font-weight: 700; font-style: normal; flex: none; }
+    .ap-row.stk .ap-ic { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .ap-main { min-width: 0; line-height: 1.25; }
+    .ap-main .ap-code { display: block; font-size: 13px; font-weight: 700; }
+    .ap-main .ap-meta { display: block; font-size: 10.5px; color: var(--text-3); }
+    .ap-bal { margin-left: auto; text-align: right; line-height: 1.25; }
+    .ap-bal b { display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .ap-bal span { display: block; font-size: 10px; color: var(--text-3); }
+    .convert-swap-wrap {
+      align-self: center; margin: -12px 0; position: relative; z-index: 2;
+      width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text-2); cursor: pointer; display: grid; place-items: center;
+    }
+    .convert-swap-wrap:hover { color: var(--text); border-color: var(--text-3); }
+    .cp-bal { font-weight: 600; color: var(--text-3); font-size: 11.5px; }
+    .cd-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+    /* K线 */
+    .kcard { padding: 18px; display: flex; flex-direction: column; }
+    .kcard-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .pill-seg.sm button { height: 24px; padding: 0 10px; font-size: 12px; }
+    .kchart-box { position: relative; flex: 1 1 auto; min-height: 240px; }
+    .kchart { width: 100%; height: 100%; display: block; }
+    /* hover 信息卡 */
+    .ktip { position: absolute; z-index: 6; pointer-events: none; display: none;
+      min-width: 128px; padding: 8px 11px; border-radius: 12px;
+      background: #fff; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .ktip-title { font-size: 10px; color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; }
+    .ktip-val { font-size: 13px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .ktip-time { font-size: 11px; color: var(--text-2); margin-top: 1px; font-variant-numeric: tabular-nums; }
+    /* K线卡头市值大字 + 涨跌幅 */
+    .kh { min-width: 0; }
+    .kh-main { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .kh-lab { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .kh-num { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .kh-sub { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+    .kh-sub.up { color: var(--up); }
+    .kh-sub.down { color: var(--down); }
+    /* 四格统计：位于 K线卡最上方 */
+    .kcard .cd-stats { display: flex; gap: 26px; flex-wrap: wrap; margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px dashed var(--border); }
+    @media (max-width: 640px) { .kcard .cd-stats { gap: 14px 22px; } }
+
+    /* 成交记录（一页 10 条，卡片自然增高 + 底部翻页） */
+    .tx-list { padding-bottom: 4px; }
+    .tx-row { display: flex; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-side { width: 44px; font-weight: 700; }
+    .tx-side.buy { color: var(--up); }
+    .tx-side.sell { color: var(--down); }
+    .tx-who { flex: 1; color: var(--text-2); font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-mid { color: var(--text-2); }
+    .tx-time { color: var(--text-3); font-size: 11px; }
+    .card-head-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 0; }
+    .tab-seg { display: flex; gap: 4px; }
+    .tab-btn { border: none; background: none; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--text-2); border-radius: 8px; }
+    .tab-btn.on { background: var(--accent-soft); color: var(--text); }
+    .card-pad { padding: 6px 18px 16px; }
+
+    /* 成交/持有者 底部翻页 */
+    .page-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 18px 16px; border-top: 1px solid #F0F1F3; }
+    .page-bar .pg-btn { height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    .page-bar .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-bar .pg-info { font-size: 12.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+    /* Swap 卡 */
+    .swap-card { padding: 18px; position: sticky; top: calc(var(--header-h) + 16px); }
+    .swap-seg { display: flex; background: var(--accent-soft); border-radius: 12px; padding: 3px; margin-bottom: 16px; }
+    .swap-seg button { flex: 1; height: 38px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; background: transparent; color: var(--text-2); }
+    .swap-seg button.on { background: var(--surface); box-shadow: var(--shadow-sm); color: var(--text); }
+    .swap-box { border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; background: var(--surface-2); }
+    .swap-box-label { font-size: 11.5px; color: var(--text-3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .swap-box-label b { color: var(--text-2); font-weight: 600; }
+    .swap-input-row { display: flex; align-items: center; gap: 10px; }
+    .swap-input { flex: 1; border: none; background: transparent; font-size: 22px; font-weight: 700; outline: none; font-family: var(--mono); width: 100%; color: var(--text); }
+    .swap-token { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px 5px 6px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .swap-token i { width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: #fff; display: grid; place-items: center; font-size: 10px; font-style: normal; }
+    .swap-arrow { display: grid; place-items: center; height: 22px; color: var(--text-3); margin: 2px 0; }
+    .swap-details { font-size: 11.5px; color: var(--text-2); }
+    .swap-details .sd-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .swap-submit { height: 52px; margin-top: 6px; width: 100%; }
+    .quick-row { display: flex; gap: 6px; margin: 8px 0 12px; }
+    .quick-row button { flex: 1; height: 28px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .quick-row button:hover { border-color: var(--accent); color: var(--text); }
+
+    /* 持有者 */
+    .holder-top { display: flex; align-items: center; gap: 12px; padding: 10px 18px 12px; }
+    .holder-top .ht-num { font-size: 22px; font-weight: 800; }
+    .holder-top .ht-txt { font-size: 12px; color: var(--text-2); }
+    .holder-row { display: flex; align-items: center; gap: 10px; padding: 8px 18px; border-top: 1px solid var(--border); font-size: 12.5px; }
+    .holder-rank { width: 22px; color: var(--text-3); font-weight: 600; }
+    .holder-addr { flex: 1; font-family: var(--mono); color: var(--text-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .holder-pct { color: var(--text-2); }
+    .holder-tag { font-size: 10px; padding: 2px 6px; border-radius: 5px; background: var(--accent-soft); }
+    .holder-tag.me { background: rgba(10,11,13,.8); color: #fff; }
+    .holder-tag.creator { background: #FFFBEB; color: #B45309; }
+
+    /* 叙事：独立行卡（About 与 Creator fees 之间；点击整卡全屏播放，页面不铺大封面） */
+    .story-card { overflow: hidden; }
+    .story-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; transition: border-color .15s ease; }
+    .story-row:hover { border-color: var(--border-strong); }
+    .story-row .sr-thumb { position: relative; width: 116px; height: 72px; flex: none; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+    .story-row .sr-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .story-row .sr-thumb-play { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 11, 13, .16); }
+    .story-row .sr-thumb-play i { width: 30px; height: 30px; border-radius: 50%; background: rgba(10, 11, 13, .55); display: grid; place-items: center; }
+    .story-row .sr-thumb-play svg { display: block; }
+    .story-row .sr-main { min-width: 0; flex: 1; }
+    .story-row .sr-title { font-size: 13.5px; font-weight: 700; }
+    .story-row .sr-desc { font-size: 12px; color: var(--text-2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .story-row .sr-src { font-size: 11px; margin-top: 4px; }
+    .story-row .sr-src a { color: var(--text); font-weight: 600; text-decoration: underline; }
+
+    /* 毕业动画 */
+    .grad-fx {
+      position: fixed; inset: 0; z-index: 3000; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .3s;
+    }
+    .grad-fx.show { opacity: 1; }
+    .grad-card {
+      background: var(--text); color: #fff; border-radius: 24px; padding: 34px 46px;
+      text-align: center; transform: scale(.8); transition: transform .35s cubic-bezier(.2,1.4,.4,1);
+      box-shadow: 0 30px 90px rgba(0,0,0,.4);
+    }
+    .grad-fx.show .grad-card { transform: scale(1); }
+    .grad-card .gf-ico { font-size: 46px; margin-bottom: 10px; }
+    .grad-card .gf-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+    .grad-card .gf-sub { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 8px; }
+
+    @media (max-width: 1020px) {
+      .cd-grid { grid-template-columns: 1fr; }
+      .swap-card { position: static; }
+    }
+    @media (max-width: 640px) {
+      .swap-id { flex-wrap: wrap; }
+    }
+
+    /* ============ 移动端交易底部弹层（≤820px；桌面隐藏） ============ */
+    .m-trade-bar, .trade-scrim, .m-grip, .cd-mh { display: none; }
+    @media (max-width: 820px) {
+      /* 触发条：通栏主按钮，位于底导（≤768）之上 */
+      .m-trade-bar {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        position: fixed; left: 12px; right: 12px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+        z-index: 1150; height: 50px; border: none; border-radius: 16px;
+        background: #0A0B0D; color: #fff; font-size: 15px; font-weight: 700;
+        box-shadow: 0 10px 28px rgba(10,11,13,.30); transition: opacity .2s;
+        cursor: pointer; -webkit-tap-highlight-color: transparent;
+      }
+      .m-trade-bar svg { display: block; }
+      body.trade-open .m-trade-bar { opacity: 0; pointer-events: none; }
+      @media (max-width: 768px) {
+        .m-trade-bar { bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
+      }
+      /* 遮罩 */
+      .trade-scrim {
+        display: block; position: fixed; inset: 0; z-index: 1200;
+        background: rgba(10,11,13,.42); opacity: 0; transition: opacity .25s;
+        pointer-events: none;
+      }
+      body.trade-open .trade-scrim { opacity: 1; pointer-events: auto; }
+      body.trade-open { overflow: hidden; }
+      /* 交易卡弹层化：同一 DOM，关闭时沉到屏幕外 */
+      #swapCard {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 1250; margin: 0;
+        max-height: min(88vh, 720px); overflow-y: auto; overscroll-behavior: contain;
+        border-radius: 22px 22px 0 0; border-bottom: none;
+        transform: translateY(calc(100% + 56px));
+        transition: transform .3s cubic-bezier(.32, .72, .24, 1);
+        pointer-events: none; box-shadow: 0 -18px 54px rgba(0,0,0,.20);
+        padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      }
+      body.trade-open #swapCard { transform: none; pointer-events: auto; }
+      /* 弹层头：把手 + 标题 + 关闭 */
+      .m-grip { display: block; margin-bottom: 6px; }
+      .m-grip .mg-bar {
+        width: 44px; height: 5px; border-radius: 3px; margin: 2px auto 10px;
+        background: rgba(10,11,13,.14);
+      }
+      .m-grip .mg-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+      .m-grip .mg-title { font-size: 15px; font-weight: 800; }
+      .m-grip .mg-close {
+        width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 50%;
+        background: var(--surface); color: var(--text-2); font-size: 13px;
+        cursor: pointer; display: grid; place-items: center;
+      }
+      /* 单列去网格间隙：交易列让位（固定弹层脱离文档流） */
+      .cd-grid { display: block; }
+      .cd-market { margin-top: 0; }
+      /* 移动端隐藏 ← 市场 返回链接（走底导/顶部导航） */
+      .cd-back { display: none; }
+      .cd-top { padding: 12px 0 18px; }
+      /* 移动端吸顶币信息头 */
+      .cd-mh {
+        display: block; position: sticky; top: 0; z-index: 950;
+        margin: 0 -16px 14px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+        background: rgba(255, 255, 255, .92);
+        backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(10, 11, 13, .07);
+      }
+      .cd-mh-id { display: flex; align-items: center; gap: 10px; }
+      .cd-mh-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+      .cd-mh-nm { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .cd-mh-sym { font-size: 12px; color: var(--text-3); font-weight: 600; flex: none; }
+      @media (min-width: 769px) {
+        /* 该区间存在固定站点顶栏（56px），吸顶头下移对齐 */
+        .cd-mh { top: 56px; }
+      }
+      /* 内容底部让位，避免被常驻按钮遮挡 */
+      .launch-shell { padding-left: 16px; padding-right: 16px; padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+    }
+
+  /* 原型：挂单类型条 / 参数信息块 */
+  /* Creator fees 两步 + 收款人 + 路由切换 */
+  .ff-recip { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 2px 0 4px; font-size: 12px; color: var(--text-2); }
+  .ff-recip .mono { font-family: var(--mono); font-weight: 600; color: var(--text); }
+  .ff-transfer { border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-2);
+    font-size: 11px; font-weight: 700; padding: 3px 12px; cursor: pointer; }
+  .ff-transfer:hover { color: var(--text); border-color: var(--text-3); }
+  .ff-route { display: flex; gap: 6px; padding: 2px 0 8px; }
+  .ff-route button { border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+    font-size: 11px; font-weight: 700; color: var(--text-2); padding: 4px 12px; cursor: pointer; white-space: nowrap; }
+  .ff-route button.on { background: var(--text); border-color: var(--text); color: #fff; }
+  .ff-rowbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .ff-rowbtns .ff-act, .ff-rowbtns .ff-transfer { width: auto; margin: 0; }
+  #tfInp { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
+    font-family: var(--mono); font-size: 13px; color: var(--text); margin: 10px 0 4px; }
+
+  .swap-arrow { cursor: pointer; }
+  .mi-card { padding: 14px 16px; }
+  .mi-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 12.5px; color: var(--text-2); border-top: 1px dashed #F0F1F3; }
+  .mi-row:first-of-type { border-top: none; }
+  .mi-row b { color: var(--text); font-weight: 700; text-align: right; }
+  .mi-title { font-size: 13.5px; font-weight: 800; margin: 10px 0 4px; }
+  .mi-note { font-size: 11.5px; color: var(--text-3); line-height: 1.5; }
+  /* About 卡（参考 token-about-card） */
+  .about-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px 24px; padding: 20px 22px; }
+  .ab-title { grid-column: 1 / -1; font-size: 15px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .ab-desc { margin-top: 7px; font-size: 13px; color: var(--text-2); line-height: 1.6; max-width: 640px; }
+  .ab-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .ab-meta .tag { font-weight: 600; }
+  .ab-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ab-link { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; }
+  .ab-link:hover { color: var(--text); border-color: var(--text-3); }
+  @media (max-width: 640px) { .about-card { grid-template-columns: 1fr; } }
+  /* About（pons token-about-card：左说明+Creator / 中 Supply / 右 Paired+合约地址） */
+  .about-card { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: auto auto; gap: 12px 40px; padding: 22px 24px; }
+  .ab-main { min-width: 0; }
+  .ab-desc { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.6; max-width: 560px; }
+  .ab-creator { font-size: 12.5px; color: var(--text-3); }
+  .ab-creator .ab-creator-addr { font-family: var(--mono); color: var(--text-2); cursor: pointer; }
+  .ab-creator b { color: var(--text-2); font-weight: 600; }
+  .ab-bd-label { font-size: 11.5px; color: var(--text-3); font-weight: 600; margin-bottom: 4px; }
+  .ab-bd-value { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+  .ab-bd-value small { font-size: 13px; font-weight: 700; color: var(--text-2); margin-left: 4px; }
+  .ab-bd-note { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .ab-right { display: grid; gap: 16px; justify-items: start; }
+  .ab-addr-line { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .ab-addr-line .mono { font-family: var(--mono); color: var(--text-2); }
+  .ab-social { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .ab-link { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font-size: 11px; font-weight: 700; cursor: pointer; text-decoration: none; }
+  .ab-link:hover { color: var(--text); border-color: var(--text-3); }
+  @media (max-width: 860px) { .about-card { grid-template-columns: 1fr; } }
+    /* 费卡（对齐 token-creator-fees-card.float） */
+  #metaHost { display: grid; gap: 14px; margin-top: 18px; }
+  .fee-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    padding: 20px 22px; display: grid; gap: 14px;
+  }
+  .ff-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ff-title { font-size: 14.5px; font-weight: 800; }
+  .ff-tag { font-size: 11px; color: var(--text-3); font-weight: 600; }
+  .ff-assets { display: grid; gap: 4px; justify-items: start; }
+  .ff-assets + .ff-assets { border-top: 1px dashed #F0F1F3; padding-top: 12px; }
+  .ff-value { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+  .ff-value small { font-size: 13px; color: var(--text-2); font-weight: 700; margin-left: 4px; }
+  .ff-sub { font-size: 12.5px; color: var(--text-2); }
+  .ff-hint { font-size: 12px; color: var(--text-3); line-height: 1.55; margin: 0; }
+  .ff-act { justify-self: start; }
+    /* ── Trade Review（pons 确认弹窗） ── */
+    .slip-chip { display: inline-flex; align-items: center; gap: 5px; border: none; background: none;
+      color: var(--text); cursor: pointer; font-family: inherit; padding: 2px 6px; border-radius: 8px; }
+    .slip-chip em { font-style: normal; font-size: 10.5px; color: var(--text-3); font-weight: 600; text-decoration: underline; }
+    .slip-edit { display: flex; align-items: center; gap: 8px; padding: 8px 2px 2px; font-size: 12px; color: var(--text-2); font-weight: 600; }
+    .slip-edit input { width: 74px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px;
+      font-size: 13px; font-weight: 700; font-family: var(--mono); color: var(--text); background: var(--surface); }
+    .slip-edit .slip-done { border: none; border-radius: 999px; padding: 6px 12px; background: var(--accent-soft);
+      color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .swap-details { display: none !important; }   /* v2 面板不展示 价格/滑点/价格影响/手续费 明细（pons 对齐） */
+
+  .review-overlay { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center;
+      background: rgba(10,11,13,.45); padding: 20px; }
+    .review-overlay.open { display: flex; }
+    .review-card { width: min(430px, 94vw); background: #fff; border-radius: 22px; padding: 20px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.22); max-height: 92vh; overflow: auto; }
+    .review-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .review-head .rt { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+    .review-head button { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(0,0,0,.06);
+      color: #555; font-size: 14px; cursor: pointer; }
+    .rv-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 10px 0;
+      border-bottom: 1px dashed rgba(10,11,13,.08); font-size: 13.5px; }
+    .rv-row .rv-l { color: var(--text-2); font-weight: 600; flex: none; }
+    .rv-row .rv-v { color: var(--text); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+    .review-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .review-actions button { flex: 1; height: 46px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+    .rv-cancel { background: rgba(0,0,0,.06); color: var(--text); }
+    .rv-cancel:hover { background: rgba(0,0,0,.11); }
+    .rv-confirm { background: #0A0B0D; color: #fff; }
+    .rv-confirm:hover { opacity: .9; }
+    /* sell Review：Confirm sell 绿 + Cancel（并排，pons Review sell） */
+    .rv-sell { background: #0E9F6E; color: #fff; }
+    .rv-sell:hover { opacity: .9; }
+    /* Review 主操作（pons：主按钮 + Cancel 链接） */
+    .rv-cta { display: flex; flex-direction: column; gap: 2px; margin-top: 18px; }
+    .rv-buy { width: 100%; height: 48px; border: none; border-radius: 999px; background: #0E9F6E; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .rv-buy:hover { opacity: .9; }
+    .rv-cancel-link { border: none; background: none; color: var(--text-2); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+    .rv-cancel-link:hover { color: var(--text); }
+    .rv-cta .rv-cancel-link { margin-top: 10px; }
+    /* 成交成功“收到资产”（pons：PONS received） */
+    .done-card { text-align: center; }
+    .done-ico { width: 46px; height: 46px; border-radius: 50%; background: #10B981; color: #fff; display: grid; place-items: center; font-size: 22px; margin: 2px auto 12px; }
+    .done-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; background: rgba(16, 185, 129, .14); color: #0E9F6E; font-size: 12px; font-weight: 700; }
+    .done-title { font-size: 18px; font-weight: 800; margin-top: 6px; }
+    .done-amount { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+    .done-asset { font-size: 13px; color: var(--text-3); font-weight: 600; }
+    .done-rows { margin: 16px 0 2px; text-align: left; }
+    .done-card .rv-buy { margin-top: 16px; }
+    .done-card .rv-cancel-link { display: block; width: 100%; text-align: center; margin-top: 10px; }
+
+  /* ===== About 卡（v2 排版：描述+Creator ｜ 右栏 Supply·Paired·Contract ｜ 底部链接条） ===== */
+  .about-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto auto; gap: 16px 44px; padding: 22px 24px; align-items: start; }
+  .about-card .ab-title { grid-column: 1 / -1; margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+  .about-card .ab-main { min-width: 0; }
+  .about-card .ab-desc { margin: 0 0 12px; font-size: 15px; font-weight: 500; color: var(--text); line-height: 1.65; max-width: 620px; }
+  .about-card .ab-creator { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border); background: rgba(10, 11, 13, 0.03); border-radius: 12px; font-size: 12.5px; color: var(--text-3); }
+  .about-card .ab-creator .ab-creator-addr { font-family: var(--mono); color: var(--text-2); cursor: pointer; border-bottom: 1px dashed rgba(10,11,13,.25); }
+  .about-card .ab-creator b { color: var(--text-2); font-weight: 700; }
+  .about-card .ab-meta { display: flex; flex-direction: column; gap: 8px; min-width: 232px; }
+  .about-card .ab-bd { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 9px 12px; background: rgba(10, 11, 13, 0.03); border: 1px solid rgba(10, 11, 13, 0.05); border-radius: 12px; }
+  .about-card .ab-bd-label { font-size: 11.5px; color: var(--text-3); font-weight: 600; flex: none; }
+  .about-card .ab-bd-value { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+  .about-card .ab-bd-value small { font-size: 12px; font-weight: 700; color: var(--text-2); margin-left: 3px; }
+  .about-card .ab-bd-note { font-size: 11px; color: var(--text-3); }
+  .about-card .ab-token-addr { font-family: var(--mono); font-size: 12px; color: var(--text-2); cursor: pointer; border-bottom: 1px dashed rgba(10, 11, 13, .25); word-break: break-all; }
+  .about-card .ab-foot { grid-column: 1 / -1; display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid #F0F1F3; }
+  .about-card .ab-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .about-card .ab-links .ab-link { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; }
+  .about-card .ab-links .ab-link:hover { color: var(--text); border-color: var(--text-3); }
+  @media (max-width: 860px) {
+    .about-card { grid-template-columns: 1fr; gap: 14px 0; }
+    .about-card .ab-meta { min-width: 0; }
+    .about-card .ab-foot { justify-content: flex-start; }
+  }
+  @media (max-width: 480px) {
+    .about-card { padding: 18px 16px; }
+  }
+  </style>
+</head>
+<body>
+  <div id="launch-header-host"></div>
+
+  <!-- 毕业动画 -->
+  <div class="grad-fx" id="gradFx">
+    <div class="grad-card">
+      <div class="gf-ico">🎓</div>
+      <div class="gf-title" id="gfTitle">已毕业</div>
+      <div class="gf-sub" id="gfSub">流动性已上 Uniswap，永久锁定。持仓无需任何操作。</div>
+    </div>
+  </div>
+
+  <!-- 叙事播放浮层 -->
+  <div class="lp-overlay" id="storyModal">
+    <div class="lp-modal" style="max-width:720px;padding:0;overflow:hidden;background:#0A0B0D">
+      <video id="storyVideo" controls autoplay playsinline style="width:100%;display:block;max-height:70vh"></video>
+    </div>
+  </div>
+
+  <!-- 移动端：交易底部弹层 触发条 / 遮罩（≤820px 生效；同一份交易卡 DOM） -->
+  <button type="button" class="m-trade-bar" id="mTradeBar" aria-label="交易">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.98 19.5a8.5 8.5 0 1 1 3.5-8.5c0 1.4-.3 2.6-.9 3.7"/><path d="M17 20v-3h-3"/><path d="M7 4.5a8.5 8.5 0 0 0-3.5 8.5c0 1.4.3 2.6.9 3.7"/><path d="M7 4v3h3"/></svg>
+    <span>交易</span>
+  </button>
+  <div class="trade-scrim" id="mTradeScrim"></div>
+
+  <main class="launch-shell" id="detailApp">
+    <div class="cd-top">
+      <a class="cd-back" href="launchpad.html">← 市场</a>
+    </div>
+
+    <!-- 移动端吸顶币信息头（≤820px；币图 + 名称/$代号） -->
+    <div class="cd-mh" id="cdMobileHead">
+      <div class="cd-mh-id">
+        <div class="cd-avatar" id="mhAvatar"></div>
+        <div class="cd-mh-tt">
+          <div class="cd-mh-name">
+            <span class="cd-mh-nm" id="mhName">—</span>
+            <span class="cd-mh-sym num" id="mhSym">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About 卡（pons 分区式：描述+Creator / 右栏 Supply·Paired·合约 / 底部链接条） -->
+    <div class="card about-card" id="aboutCard">
+      <h2 class="ab-title">About</h2>
+      <div class="ab-main">
+        <p class="ab-desc" id="abDesc">—</p>
+        <div class="ab-creator" id="abCreator"></div>
+      </div>
+      <div class="ab-meta">
+        <div class="ab-bd">
+          <span class="ab-bd-label">Supply</span>
+          <span class="ab-bd-value num" id="abSupplyVal">—</span>
+          <span class="ab-bd-note">Fixed at launch</span>
+        </div>
+        <div class="ab-bd">
+          <span class="ab-bd-label">Paired</span>
+          <span class="ab-bd-value num" id="abPair">—</span>
+        </div>
+        <div class="ab-bd ab-bd-contract">
+          <span class="ab-bd-label">Contract</span>
+          <span class="ab-token-addr mono num" id="abTokenAddr" onclick="copyText(this.dataset.full || this.textContent)" title="复制合约地址（全量）">—</span>
+        </div>
+      </div>
+      <div class="ab-foot">
+        <div class="ab-links" id="abFoot"></div>
+      </div>
+    </div>
+
+    <!-- 叙事（独立行卡：About 与 Creator fees 之间；点击整卡全屏播放） -->
+    <div class="cd-bottom story-zone">
+      <div class="card story-card story-row" onclick="playStory()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();playStory()}">
+        <div class="sr-thumb">
+          <img id="srThumbImg" alt="" />
+          <div class="sr-thumb-play" aria-hidden="true">
+            <i>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+            </i>
+          </div>
+        </div>
+        <div class="sr-main">
+          <div class="sr-title">代币叙事</div>
+          <div class="sr-desc" id="storyDesc">—</div>
+          <div class="sr-src" id="storySrc"></div>
+        </div>
+      </div>
+    </div>
+    <div id="metaHost" style="display:none"></div>
+
+        <div class="cd-grid">
+      <div class="cd-col cd-trade">
+      <div class="card swap-card" id="swapCard">
+        <div class="m-grip">
+          <div class="mg-bar"></div>
+          <div class="mg-row">
+            <span class="mg-title">交易</span>
+            <button type="button" class="mg-close" id="mSheetClose" aria-label="关闭">✕</button>
+          </div>
+        </div>
+        <div class="swap-id">
+          <div class="cd-avatar" id="cdAvatar"></div>
+          <div class="swap-id-main">
+            <div class="swap-id-title">
+              <span class="swap-nm" id="cdName">—</span>
+              <span class="swap-sym num" id="cdSym">—</span>
+            </div>
+            <div class="swap-id-sub">
+              <span>Paired <b id="cdPairTxt">—</b></span>
+              <span id="cdPhaseWrap" style="display:none"><span class="swap-id-dot">·</span><span class="phase up" id="cdPhase">Uniswap v4</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- curve 毕业进度（pons v2-graduation；仅未毕业展示） -->
+        <div class="v2-grad" id="cdGrad" style="display:none">
+          <div class="vg-head"><span>Bonding curve</span><span class="num" id="cdGradPct">0% to graduation</span></div>
+          <div class="vg-track" id="cdGradTrack" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progress toward graduation"><div class="vg-fill" id="cdGradBar" style="width:0%"></div></div>
+          <p class="vg-note num" id="cdGradSub">—</p>
+        </div>
+        <div id="mktPanel">
+          <div class="convert-stack">
+            <div class="convert-panel">
+              <span class="convert-panel-label"><span id="paySideLabel">Sell</span><span class="cp-bal num" id="payBalance">—</span></span>
+              <div class="convert-row">
+                <input class="swap-input num" id="swapIn" type="number" min="0" step="any" placeholder="0.00" autocomplete="off" />
+                <button type="button" class="convert-asset pay-sel" id="payToken" title="选择支付资产（按配对资产计价结算）"><i>Ξ</i> ETH</button>
+              </div>
+              <div class="quick-row" id="quickRow"></div>
+              <div class="asset-pop" id="assetPop" style="display:none"></div>
+            </div>
+            <button type="button" class="convert-swap-wrap" id="swapArrow" title="对调方向" aria-label="对调方向">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5-5 5 5M17 14l-5 5-5-5"/></svg>
+            </button>
+            <div class="convert-panel">
+              <span class="convert-panel-label"><span id="outLabel">Buy</span></span>
+              <div class="convert-row">
+                <div class="convert-amount num" id="swapOut">0</div>
+                <span class="convert-asset" id="outToken"><i>$</i> —</span>
+              </div>
+            </div>
+          </div>
+          <div class="swap-details" style="margin-top:8px">
+            <div class="sd-row"><span>价格</span><b class="num" id="sdPrice">—</b></div>
+            <div class="sd-row sd-slip">
+              <span>Slippage</span>
+              <button type="button" class="slip-chip" id="slipToggle" onclick="toggleSlipEdit()"><span class="num" id="slipVal">1%</span> <em>Adjust</em></button>
+            </div>
+            <div class="slip-edit" id="slipEdit" style="display:none">
+              <span>Slippage</span>
+              <input type="number" id="slipInput" min="0.1" max="10" step="0.1" value="1" oninput="slipApply(this.value)" />
+              <span>%</span>
+              <button type="button" class="slip-done" onclick="toggleSlipEdit(false)">Done</button>
+            </div>
+            <div class="sd-row"><span>价格影响</span><b class="num" id="sdImpact">—</b></div>
+            <div class="sd-row"><span>手续费</span><b class="num" id="sdFee">1%</b></div>
+          </div>
+          <div class="inline-warn danger" id="swapErr"></div>
+          <div class="inline-warn warn" id="swapWarn"></div>
+          <button class="btn btn-primary btn-lg swap-submit" id="swapBtn" onclick="doSwap()">买入</button>
+        </div>
+      </div>
+
+      </div>
+      <div class="cd-col cd-market">
+<!-- K线 -->
+        <div class="card kcard">
+          <div class="cd-stats">
+            <div class="cd-stat"><div class="v num" id="cdPrice">—</div><div class="k">Price</div></div>
+            <div class="cd-stat"><div class="v num" id="cdMcap">—</div><div class="k">Market cap</div></div>
+            <div class="cd-stat"><div class="v num" id="cdPairPx">—</div><div class="k" id="kPairLab">Price in —</div></div>
+            <div class="cd-stat"><div class="v num" id="cdMkt">—</div><div class="k">Market</div></div>
+          </div>
+          <div class="kcard-head">
+            <div class="kh">
+              <div class="kh-main"><span class="kh-lab">市值</span><span class="kh-num num" id="cdMcapBig">—</span></div>
+              <div class="kh-sub num" id="cdChg">涨跌幅：— 1H</div>
+            </div>
+            <div class="pill-seg sm" id="kSeg">
+              <button data-k="5m">5M</button>
+              <button data-k="1h" class="on">1H</button>
+              <button data-k="6h">6H</button>
+              <button data-k="1d">1D</button>
+              <button data-k="all">ALL</button>
+            </div>
+          </div>
+          <div class="kchart-box" id="kChartBox">
+            <canvas class="kchart" id="kChart"></canvas>
+            <div class="ktip" id="kTip" style="display:none">
+              <div class="ktip-title">Market cap</div>
+              <div class="ktip-val num" id="kTipVal">—</div>
+              <div class="ktip-time num" id="kTipTime">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cd-bottom">
+      <!-- 成交记录 / 持有者（页签） -->
+      <div class="card">
+        <div class="card-head-row">
+          <div class="tab-seg" id="recSeg">
+            <button class="tab-btn on" data-v="tx">成交记录</button>
+            <button class="tab-btn" data-v="holders">持有者</button>
+          </div>
+        </div>
+        <div class="card-pad tx-list" id="txList"></div>
+        <div class="card-pad holder-pad" id="holdersPane" style="display:none">
+          <div class="holder-top">
+            <div class="ht-num num" id="holdersTotal">—</div>
+            <div class="ht-txt">持有者</div>
+          </div>
+          <div id="holderList"></div>
+        </div>
+        <div class="page-bar" id="recPager" style="display:none">
+          <button type="button" class="pg-btn" id="pgPrev">‹ 上一页</button>
+          <span class="pg-info num" id="pgInfo">1 / 1</span>
+          <button type="button" class="pg-btn" id="pgNext">下一页 ›</button>
+        </div>
+      </div>
+    </div>
+      
+  </main>
+
+  <!-- Trade Review（pons：Review buy/sell + Confirm） -->
+  <div class="review-overlay" id="reviewModal">
+    <div class="review-card">
+      <div class="review-head">
+        <div class="rt" id="rvTitle">Review buy</div>
+        <button type="button" id="rvClose" aria-label="关闭">✕</button>
+      </div>
+      <div id="rvBody"></div>
+      <div class="rv-cta" id="rvFootBuy">
+        <button type="button" class="rv-buy" id="rvConfirmBuy">Buy</button>
+        <button type="button" class="rv-cancel-link" id="rvCancelBuy">Cancel</button>
+      </div>
+      <div class="review-actions" id="rvFootSell" style="display:none">
+        <button type="button" class="rv-cancel" id="rvCancelSell">Cancel</button>
+        <button type="button" class="rv-sell" id="rvConfirmSell">Confirm sell</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 收款人修改弹层 -->
+  <div class="review-overlay" id="transferModal" onclick="if(event.target===this)closeTransfer()">
+    <div class="review-card">
+      <div class="review-head"><div class="rt">New fee recipient</div><button type="button" id="tfClose" aria-label="关闭" onclick="closeTransfer()">✕</button></div>
+      <input id="tfInp" type="text" placeholder="0x…" autocomplete="off" spellcheck="false" />
+      <div class="review-actions">
+        <button type="button" class="rv-cancel" onclick="closeTransfer()">Cancel</button>
+        <button type="button" class="rv-confirm" onclick="confirmTransfer()">Transfer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成交成功：收到资产（pons：PONS received） -->
+  <div class="review-overlay" id="doneModal">
+    <div class="review-card done-card">
+      <div class="done-ico">✓</div>
+      <div class="done-chip">Complete</div>
+      <div class="done-title num" id="doneTitle">—</div>
+      <div class="done-amount num" id="doneAmt">—</div>
+      <div class="done-asset" id="doneAsset">—</div>
+      <div class="done-rows">
+        <div class="rv-row"><span class="rv-l">Amount</span><span class="rv-v num" id="doneRowAmt">—</span></div>
+        <div class="rv-row"><span class="rv-l">Value</span><span class="rv-v num" id="doneVal">—</span></div>
+      </div>
+      <button type="button" class="rv-buy" id="doneTx">View transaction</button>
+      <button type="button" class="rv-cancel-link" id="doneAgain">Swap again</button>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="launch-coin.js"></script>
+  <script src="launch-shell.js"></script>
+  <script>
+    // ============================================================
+    //  交易详情
+    // ============================================================
+    var coin = null;
+    var side = 'buy';
+    var paySym = 'ETH';   // 支付资产（默认=币的配对资产，可切任意受支持资产）
+    var range = '1h';
+    var esc = function (s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    };
+
+    // 演示 holders / charts 数据
+var holders = [];
+    var chartSeries = [];
+    var chartSeed = 0;
+    var RANGE_LEN = { '5m': 36, '1h': 60, '6h': 84, '1d': 120, all: 160 };
+    var RANGE_NAME = { '5m': '5M', '1h': '1H', '6h': '6H', '1d': '1D', all: 'ALL' };
+    var RANGE_MS = { '5m': 5 * 60e3, '1h': 3600e3, '6h': 6 * 3600e3, '1d': 24 * 3600e3, all: 30 * 24 * 3600e3 };
+    var __cm = null;   // 最近一次 K线绘制的几何元数据（hover 复用）
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function fmtAxisTime(ts, full) {
+      var d = new Date(ts);
+      var hm = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      if (full) return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hm;
+      return (RANGE_MS[range] || 3600e3) <= 6 * 3600e3 ? hm : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm;
+    }
+    var myTrades = [];
+
+    function initCoin() {
+      var q = new URLSearchParams(window.location.search).get('id');
+      coin = Launch.coinById(q) || (Launch.topCoin ? Launch.topCoin() : Launch.coins[0]);
+      paySym = coin.pair || 'ETH';
+      document.title = coin.name + ' · 发射台';
+
+      // 图表数据按币生成确定性序列
+      var seedVal = coin.id.split('').reduce(function (a, c) { return a + c.charCodeAt(0); }, 0);
+      chartSeed = seedVal;
+      chartSeries = buildSeries(seedVal);
+      // 初始成交流（确定性种子数据）
+      txHistory = fakeTrades();
+      document.getElementById('cdAvatar').innerHTML = '<img src="' + esc(coin.cover) + '" alt="">';
+      // 移动端吸顶币信息头头像（与交易卡身份行同图）
+      var _mhAv = document.getElementById('mhAvatar');
+      if (_mhAv) _mhAv.innerHTML = '<img src="' + esc(coin.cover) + '" alt="">';
+      // 叙事（独立行卡：无原地大封面，文案由 renderHead 填充，整卡点击播放）
+      renderHead();
+      renderCurve();
+      renderTx();
+      renderChart();
+      renderHolders();
+      refreshSwap();
+      ordShow();
+      renderMeta();
+    }
+
+    function buildSeries(seed, n) {
+      n = n || 60;
+      var out = [];
+      var v = 0.3 + (seed % 40) / 100;
+      for (var i = 0; i < n; i++) {
+        v = Math.max(0.05, Math.min(1, v + (Math.random() - 0.48) * 0.06));
+        out.push(v);
+      }
+      return out;
+    }
+    // 切时间范围：按范围密度重建确定性序列（5M/1H/6H/1D/ALL）
+    function chartRebuild() {
+      var n = RANGE_LEN[range] || 60;
+      chartSeries = buildSeries(chartSeed || 0, n);
+      hideTip();
+      renderChart();
+      updateChg();
+    }
+    // K线卡头：大字市值（紧凑格式）+ 区间涨跌幅（确定性演示值）
+    function compactUsdBig(v) {
+      v = v || 0;
+      if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+      if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+      if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+      if (v >= 100) return '$' + v.toFixed(0);
+      if (v >= 1) return '$' + v.toFixed(2);
+      return '$' + v.toFixed(4);
+    }
+    function updateChg() {
+      if (!coin) return;
+      var el = document.getElementById('cdChg');
+      if (!el) return;
+      var seed = (coin.id || 'x') + ':' + range;
+      var h = 2166136261, i2;
+      for (i2 = 0; i2 < seed.length; i2++) { h ^= seed.charCodeAt(i2); h = Math.imul(h, 16777619) >>> 0; }
+      var d = ((h % 251) - 125) / 1000;   // ±0.125% 演示区间涨跌幅
+      var s = (d >= 0 ? '+' : '') + d.toFixed(2) + '% ' + (RANGE_NAME[range] || '1H');
+      el.textContent = '涨跌幅：' + s;
+      el.className = 'kh-sub num' + (d > 0 ? ' up' : d < 0 ? ' down' : '');
+    }
+
+    function renderHead() {
+      // 交易卡身份行：名称/代号/Paired（曲线状态由 renderCurve 维护）
+      document.getElementById('cdName').textContent = coin.name;
+      document.getElementById('cdSym').textContent = '$' + coin.symbol;
+      document.getElementById('cdPairTxt').textContent = coin.pair || 'ETH';
+      // 移动端吸顶币信息头：名称/$代号
+      var _mhN = document.getElementById('mhName');
+      var _mhS = document.getElementById('mhSym');
+      if (_mhN) _mhN.textContent = coin.name;
+      if (_mhS) _mhS.textContent = '$' + coin.symbol;
+      // K线卡头大字市值 + 区间涨跌幅
+      var mb = document.getElementById('cdMcapBig');
+      if (mb) mb.textContent = compactUsdBig(coin.marketCap || 0);
+      updateChg();
+      // pons token-market-stats 四格：Price / Market cap / Price in X / Market
+      document.getElementById('cdPrice').textContent = Launch.fmtPrice(coin.priceUsd);
+      document.getElementById('cdMcap').textContent = Launch.fmtUsd(coin.marketCap || 0);
+      var pairForPx = coin.pair || 'ETH';
+      var ppx = (window.Launch && Launch.assetPrice) ? Launch.assetPrice(pairForPx) : null;
+      var fmtPairPx = function (v) {
+        if (v == null || !isFinite(v)) return '—';
+        var s2 = v >= 1 ? v.toFixed(4) : v >= 0.0001 ? v.toFixed(8) : v.toFixed(12);
+        return s2.replace(/\.?0+$/, '');
+      };
+      document.getElementById('kPairLab').textContent = 'Price in ' + pairForPx;
+      document.getElementById('cdPairPx').textContent = ppx ? fmtPairPx((coin.priceUsd || 0) / ppx) : '—';
+      document.getElementById('cdMkt').textContent = coin.graduated ? 'Uniswap v4' : 'Bonding curve';
+      // About 卡（pons token-about-card 四区：左描述+Creator / 中 Supply / 右 Paired+地址）
+      document.getElementById('abDesc').textContent = coin.tagline ||
+        (coin.sourceTitle ? '关于「' + coin.sourceTitle + '」的链上故事，见证它从第一笔走向毕业。' : '一枚在 Story.fun 发射的叙事代币。');
+      var taxTxt = (((coin.creatorTaxPct || 0) * 1).toFixed(2)) + '%';
+      document.getElementById('abCreator').innerHTML =
+        'Creator <span class="ab-creator-addr num" onclick="copyText(coin.creatorAddr)" title="复制">' + esc(coin.creatorAddr) + '</span>' +
+        ' · <b>' + taxTxt + '</b> creator tax';
+      document.getElementById('abSupplyVal').innerHTML = '1,000,000,000 <small>' + esc(coin.symbol) + '</small>';
+      document.getElementById('abPair').textContent = esc(coin.pair || 'ETH');
+      // 底部链接条：Explorer + 按创建参数显示的 Twitter / Telegram
+      var footHtml = '<a class="ab-link" href="javascript:void(0)" onclick="fakeLink()">Explorer</a>';
+      if (coin.social && coin.social.x) {
+        footHtml += '<a class="ab-link" href="https://x.com/' + esc(coin.social.x) + '" target="_blank" rel="noopener">Twitter</a>';
+      }
+      if (coin.social && coin.social.tg) {
+        footHtml += '<a class="ab-link" href="https://t.me/' + esc(coin.social.tg) + '" target="_blank" rel="noopener">Telegram</a>';
+      }
+      var foot = document.getElementById('abFoot');
+      if (foot) foot.innerHTML = footHtml;
+      // Token 合约地址：确定性假地址（区别于 Creator 地址）
+      (function () {
+        var el = document.getElementById('abTokenAddr');
+        var full = (window.Launch && Launch.coinContract) ? Launch.coinContract(coin.id) : '';
+        if (!full) { el.textContent = '—'; return; }
+        el.dataset.full = full;                       // 展示脱敏、复制与搜索用全量（口径统一）
+        el.textContent = full.slice(0, 6) + '…' + full.slice(-4);
+      })();
+      // 叙事文案
+      document.getElementById('storyDesc').textContent = '这里是视频本身的描述';
+      var stImg = document.getElementById('srThumbImg');
+      if (stImg) stImg.src = coin.cover || '';
+      var src = '';
+      if (coin.sourceTitle) {
+        src = '源自 <a href="javascript:void(0)" onclick="goSource()">' + esc(coin.sourceTitle) + '</a>';
+      }
+      document.getElementById('storySrc').innerHTML = src;
+      // 我的持仓
+      refreshSwap();
+    }
+    function goSource() {
+      if (coin.video) playStory();
+      else Launch.toast('叙事预览暂不可用', 'warn');
+    }
+    function fakeLink() { if (Launch && Launch.toast) Launch.toast('原型演示链接', 'ok'); }
+    var __divAmt = {};
+    // 调试身份（演示 Creator / Holder / 路人 门控语义）：localStorage sf_demo_role
+    function __demoRole() {
+      var r = ''; try { r = localStorage.getItem('sf_demo_role') || ''; } catch (e) {}
+      return (r === 'creator' || r === 'holder' || r === 'other') ? r : '';
+    }
+    function __demoHeldPct() {
+      var h2 = 0, s2 = coin.id || 'x', i2;
+      for (i2 = 0; i2 < s2.length; i2++) h2 = (h2 * 31 + s2.charCodeAt(i2)) >>> 0;
+      return 2 + (h2 % 6);
+    }
+    function __isMyCoin() {
+      var r = __demoRole();
+      if (r === 'creator') return true;
+      if (r === 'holder' || r === 'other') return false;
+      return !!(window.Launch && (Launch.USER.created || []).indexOf(coin.id) !== -1);
+    }
+    function __heldCoin() {
+      var r = __demoRole();
+      if (r === 'holder') return true;
+      if (r === 'creator' || r === 'other') return false;
+      var h = (window.Launch && Launch.USER.holdings) ? Launch.USER.holdings[coin.id] : null;
+      return !!(h && h.amount > 0);
+    }
+    function __divClaimed(id) {
+      try { var a = JSON.parse(localStorage.getItem('sf_div_claimed') || '[]'); return a.indexOf(id) !== -1; } catch (e) { return false; }
+    }
+    function __markDivClaimed(id) {
+      try { var a = JSON.parse(localStorage.getItem('sf_div_claimed') || '[]'); if (a.indexOf(id) === -1) { a.push(id); localStorage.setItem('sf_div_claimed', JSON.stringify(a)); } } catch (e) {}
+    }
+    function claimHolderDiv() {
+      var amt = __divAmt[coin.id];
+      if (!amt) { Launch.toast('当前无待领分红', 'warn'); return; }
+      var pair = coin.pair || 'ETH';
+      var qty = (Launch.qtyOfUsd ? Launch.qtyOfUsd(amt, pair) : Launch.usdToEth(amt));
+      if (window.Launch && Launch.credit) {
+        Launch.credit(pair, qty);
+        if (Launch.persist) Launch.persist();
+      } else if (window.Launch && Launch.USER) {
+        Launch.USER.eth += qty;
+        if (Launch.persist) Launch.persist();
+      }
+      __markDivClaimed(coin.id);
+      Launch.toast('已领取持有人分红 ' + Launch.fmtQty(qty) + ' ' + pair, 'ok');
+      renderMeta();
+    }
+    function doClaim(id) {
+      if (!Launch.isLoggedIn()) { openLoginModal(); return; }
+      var r = Launch.claim(id);
+      if (r.ok) {
+        var cq = r.qty != null ? (Launch.fmtQty(r.qty) + ' ' + (r.pair || 'ETH') + '（≈' + Launch.fmtUsd(r.usd) + '）') : Launch.fmtUsd(r.usd);
+        Launch.toast('已领取 ' + cq, 'ok'); renderHead(); renderCurve(); renderMeta();
+      }
+      else Launch.toast(r.msg || '暂无可领取收益', 'warn');
+    }
+    function copyText(t) {
+      if (navigator.clipboard) navigator.clipboard.writeText(t).catch(function () {});
+    }
+    function playStory() {
+      var v = document.getElementById('storyVideo');
+      if (!coin.video) { Launch.toast('该叙事暂无视频', 'warn'); return; }
+      v.src = coin.video;
+      document.getElementById('storyModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(function () { v.play().catch(function () {}); }, 100);
+    }
+    document.getElementById('storyModal').addEventListener('click', function (e) {
+      if (e.target === this) {
+        this.classList.remove('open');
+        document.getElementById('storyVideo').pause();
+        document.body.style.overflow = '';
+      }
+    });
+
+    // 交易卡 curve 毕业进度（pons v2-graduation：Bonding curve + % + 进度条 + raised note）
+    function renderCurve() {
+      var box = document.getElementById('cdGrad');
+      if (!box) return;
+      var wrap = document.getElementById('cdPhaseWrap');
+      var ph = document.getElementById('cdPhase');
+      if (!coin || coin.graduated) {
+        box.style.display = 'none';
+        if (wrap) wrap.style.display = '';
+        if (ph) { ph.textContent = 'Uniswap v4'; ph.className = 'phase up'; }
+        return;
+      }
+      box.style.display = 'grid';
+      if (wrap) wrap.style.display = 'none';
+      var pair = coin.pair || 'ETH';
+      var raisedU = coin.poolUsd || 0;
+      var thrU = coin.gradThresholdUsd || 13440;
+      var p = Math.min(100, Math.round((raisedU / (thrU || 1)) * 100));
+      document.getElementById('cdGradPct').textContent = p + '% to graduation';
+      document.getElementById('cdGradTrack').setAttribute('aria-valuenow', String(p));
+      document.getElementById('cdGradBar').style.width = p + '%';
+      // note 按配对资产计价（与 pons 口径一致）
+      var px = (window.Launch && Launch.assetPrice) ? (Launch.assetPrice(pair) || 0) : 0;
+      var q = function (usd) {
+        var v = usd / (px || 1);
+        var s = v.toFixed(6).replace(/\.?0+$/, '');
+        return s || '0';
+      };
+      var note;
+      if (px > 0) {
+        note = q(raisedU) + ' of ' + q(thrU) + ' ' + pair + ' raised. At the threshold the curve closes and liquidity moves to a Uniswap v4 pool.';
+      } else {
+        note = Launch.fmtUsd(raisedU) + ' of ' + Launch.fmtUsd(thrU) + ' raised. At the threshold the curve closes and liquidity moves to a Uniswap v4 pool.';
+      }
+      document.getElementById('cdGradSub').textContent = note;
+    }
+
+    // ============ K线 ============
+    function renderChart(hl) {
+      var canvas = document.getElementById('kChart');
+      var dpr = window.devicePixelRatio || 1;
+      var w = canvas.clientWidth || 640, h = canvas.clientHeight || 240;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      var ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      var series = chartSeries.slice();
+      // 毕业分割：毕业后段落在图表上放大呈现
+      if (coin.graduated && series.length > 4) {
+        var gi = Math.floor(series.length * 0.7);
+        for (var i0 = gi; i0 < series.length; i0++) series[i0] = Math.min(1, series[i0] * 1.4);
+      }
+      // 归一化
+      var mn = Math.min.apply(null, series), mx = Math.max.apply(null, series);
+      var span = (mx - mn) || 0.001;
+      var padL = 46, padR = 14, padT = 12, padB = 24;
+      var iw = w - padL - padR, ih = h - padT - padB;
+      var step = iw / (series.length - 1);
+      var mcap = coin.marketCap || 0;
+      var sLast = series[series.length - 1];
+      var dur = RANGE_MS[range] || 3600e3;
+      var dt = dur / (series.length - 1);
+      var now = Date.now();
+      var n = series.length;
+      var capAt = function (s) { return sLast > 0 ? mcap * (s / sLast) : mcap; };
+
+      // 水平网格 + Y 轴刻度（$市值）
+      ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textBaseline = 'middle';
+      for (var g = 0; g < 4; g++) {
+        var gy = padT + (ih / 3) * g;
+        ctx.strokeStyle = '#F0F1F3'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(w - padR, gy); ctx.stroke();
+        ctx.fillStyle = '#98A2B3'; ctx.textAlign = 'right';
+        ctx.fillText(compactUsdBig(capAt(mn + (g / 3) * span)), padL - 7, gy);
+      }
+
+      // 竖直网格 + X 轴刻度（时间/日期）
+      var xFrac = [0, 1 / 3, 2 / 3, 1];
+      ctx.textBaseline = 'top';
+      for (var k = 0; k < xFrac.length; k++) {
+        var fr = xFrac[k];
+        var gx = padL + iw * fr;
+        ctx.strokeStyle = '#F6F7F9'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(gx, padT); ctx.lineTo(gx, h - padB); ctx.stroke();
+        ctx.fillStyle = '#98A2B3'; ctx.textAlign = 'center';
+        var idxT = Math.round(fr * (n - 1));
+        ctx.fillText(fmtAxisTime(now - (n - 1 - idxT) * dt, false), gx, h - padB + 5);
+      }
+
+      // 毕业分割
+      if (coin.graduated && n > 4) {
+        var ggx = padL + step * Math.floor(n * 0.7);
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#0E9F6E'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(ggx, padT); ctx.lineTo(ggx, h - padB); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // 渐变面积
+      var grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(10,11,13,.10)');
+      grad.addColorStop(1, 'rgba(10,11,13,0)');
+      ctx.beginPath();
+      ctx.moveTo(padL, padT + ih - ((series[0] - mn) / span) * ih);
+      for (var i2 = 1; i2 < n; i2++) {
+        ctx.lineTo(padL + step * i2, padT + ih - ((series[i2] - mn) / span) * ih);
+      }
+      ctx.lineTo(w - padR, h - padB); ctx.lineTo(padL, h - padB); ctx.closePath();
+      ctx.fillStyle = grad; ctx.fill();
+
+      // 折线
+      ctx.beginPath();
+      ctx.moveTo(padL, padT + ih - ((series[0] - mn) / span) * ih);
+      for (var i3 = 1; i3 < n; i3++) {
+        ctx.lineTo(padL + step * i3, padT + ih - ((series[i3] - mn) / span) * ih);
+      }
+      ctx.strokeStyle = '#0A0B0D'; ctx.lineWidth = 2; ctx.stroke();
+
+      // 存储本次绘制几何（hover 复用）
+      __cm = { mn: mn, span: span, padL: padL, padR: padR, padT: padT, padB: padB,
+               ih: ih, iw: iw, step: step, w: w, h: h, n: n, sLast: sLast,
+               mcap: mcap, vals: series.slice(), now: now, dt: dt };
+
+      // 末端当前点
+      var lx = w - padR, ly = padT + ih - ((series[n - 1] - mn) / span) * ih;
+      ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#0A0B0D'; ctx.fill();
+      ctx.beginPath(); ctx.arc(lx, ly, 7, 0, Math.PI * 2); ctx.fillStyle = 'rgba(10,11,13,.15)'; ctx.fill();
+
+      // hover 十字竖线 + 采样点
+      if (typeof hl === 'number' && hl >= 0 && hl < n) {
+        var hx = padL + step * hl, hy = padT + ih - ((series[hl] - mn) / span) * ih;
+        ctx.strokeStyle = 'rgba(10,11,13,.28)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, h - padB); ctx.stroke();
+        ctx.beginPath(); ctx.arc(hx, hy, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#0A0B0D';
+        ctx.beginPath(); ctx.arc(hx, hy, 4.5, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+
+    // ============ K线 hover：十字线 + 信息卡 ============
+    function kHoverIdx(ev, box) {
+      if (!__cm) return -1;
+      var r = box.getBoundingClientRect();
+      var x = ev.clientX - r.left, y = ev.clientY - r.top;
+      if (x < __cm.padL - 3 || x > __cm.w - __cm.padR + 3 || y < __cm.padT - 3 || y > __cm.h - __cm.padB + 3) return -1;
+      var i = Math.round((x - __cm.padL) / __cm.step);
+      return (i >= 0 && i < __cm.n) ? i : -1;
+    }
+    function hideTip() {
+      var tip = document.getElementById('kTip');
+      if (tip) tip.style.display = 'none';
+    }
+    function showTip(i) {
+      var tip = document.getElementById('kTip');
+      if (!tip || !__cm || i < 0) return;
+      var s = __cm.vals[i];
+      var cap = __cm.sLast > 0 ? __cm.mcap * (s / __cm.sLast) : __cm.mcap;
+      var ts = __cm.now - (__cm.n - 1 - i) * __cm.dt;
+      document.getElementById('kTipVal').textContent = compactUsdBig(cap);
+      document.getElementById('kTipTime').textContent = fmtAxisTime(ts, true);
+      var x = __cm.padL + __cm.step * i;
+      var y = __cm.padT + __cm.ih - ((s - __cm.mn) / __cm.span) * __cm.ih;
+      var tw = 150;
+      var left = x + 14;
+      if (left + tw > __cm.w - 6) left = x - 14 - tw;
+      var top = y + 12;
+      if (top + 72 > __cm.h - 4) top = y - 72 - 12;
+      if (top < 4) top = 4;
+      tip.style.left = Math.max(6, left) + 'px';
+      tip.style.top = top + 'px';
+      tip.style.display = 'block';
+    }
+    (function bindKChartHover() {
+      var box = document.getElementById('kChartBox');
+      if (!box) return;
+      box.addEventListener('mousemove', function (ev) {
+        var i = kHoverIdx(ev, box);
+        renderChart(i >= 0 ? i : -1);
+        if (i >= 0) showTip(i); else hideTip();
+      });
+      box.addEventListener('mouseleave', function () {
+        hideTip();
+        renderChart();
+      });
+    })();
+
+    // ============ 成交记录 ============
+    function fakeTrades() {
+      var arr = [];
+      var names = ['0x8F…a3d2', '0x11…c9e4', '0xE4…7b0a', '0x77…d0f1', '0x02…b8c5'];
+      for (var i = 0; i < 14; i++) {
+        var buy = Math.random() > 0.45;
+        var amt = (0.05 + Math.random() * 3);
+        arr.push({ side: buy ? 'buy' : 'sell', who: names[i % names.length],
+                   amount: amt, price: coin.priceUsd * (1 + (Math.random() - 0.5) * 0.06),
+                   at: Date.now() - Math.floor(Math.random() * 86400000) });
+      }
+      arr.sort(function (a, b) { return b.at - a.at; });
+      return arr;
+    }
+    var txHistory = [];
+    // 分页：一页 10 条（成交 / 持有者共用底部翻页条）
+    var PAGE_SIZE = 10;
+    var pgTx = 1, pgHold = 1, pgTotalTx = 1, pgTotalHold = 1;
+    function paintPager() {
+      var bar = document.getElementById('recPager');
+      if (!bar) return;
+      var info = document.getElementById('pgInfo');
+      var prev = document.getElementById('pgPrev');
+      var next = document.getElementById('pgNext');
+      var onHolders = document.getElementById('holdersPane').style.display !== 'none';
+      var t = onHolders ? pgTotalHold : pgTotalTx;
+      var p = onHolders ? pgHold : pgTx;
+      var show = t > 1;
+      bar.style.display = show ? 'flex' : 'none';
+      if (!show) return;
+      info.textContent = p + ' / ' + t;
+      prev.disabled = p <= 1;
+      next.disabled = p >= t;
+    }
+    function renderTx() {
+      var list = document.getElementById('txList');
+      var all = txHistory.length ? txHistory.slice() : fakeTrades();
+      pgTotalTx = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+      pgTx = Math.max(1, Math.min(pgTx, pgTotalTx));
+      if (!all.length) {
+        list.innerHTML = '<div class="empty" style="padding:30px 10px"><div class="empty-title" style="font-size:14px">还没有交易</div><div class="empty-desc">买入第一笔后展示</div></div>';
+        paintPager();
+        return;
+      }
+      list.innerHTML = all.slice((pgTx - 1) * PAGE_SIZE, pgTx * PAGE_SIZE).map(function (t) {
+        var who = t.who || (Launch.walletText ? Launch.walletText() : '我');
+        return '<div class="tx-row">' +
+          '<span class="tx-side ' + t.side + '">' + (t.side === 'buy' ? '买入' : '卖出') + '</span>' +
+          '<span class="tx-who">' + esc(who) + '</span>' +
+          '<span class="tx-mid">' + (t.amount != null ? t.amount.toFixed(4) + ' ETH' : '') + '</span>' +
+          '<span style="font-weight:600">$' + (t.amount ? t.amount.toFixed(4) : '') + '</span>' +
+          '<span class="tx-time">' + Launch.timeAgo(t.at || Date.now()) + '</span></div>';
+      }).join('');
+      paintPager();
+    }
+
+    // ============ 原型：挂单类型 / 方向互换 / 参数信息 ============
+    // v2（pons）：交易面板仅 Market（无 Limit/Orders/Heatmap）
+    function ordShow() {
+      if (!coin) return;
+      var mk = document.getElementById('mktPanel');
+      if (mk) mk.style.display = '';
+    }
+    function flipSwap() {
+      side = side === 'buy' ? 'sell' : 'buy';
+      var btns = document.querySelectorAll('#swapSeg button');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-s') === side);
+      refreshSwap();
+    }
+    // 参数信息（对齐参考 About/Creator fees/Holder fee sharing；已毕业时隐藏）
+    // ===== Creator fees 两步 + 收款人 + 动态路由（发行者视角） =====
+    var __issSession = { pots: {}, recv: {} };
+    function issRecv(coin2) {
+      if (__issSession.recv[coin2.id]) return __issSession.recv[coin2.id];
+      return coin2.creatorWallet || coin2.creatorAddr || '0x…';
+    }
+    function shortRecv(a) {
+      a = a || '';
+      return a.length > 14 ? a.slice(0, 8) + '…' + a.slice(-6) : a;
+    }
+    function saveIssRecv(coin2, addr) { __issSession.recv[coin2.id] = addr; }
+    // 发行者两步领取：会话内存态（不持久化，刷新即可重演）
+    function issPot(coin2) {
+      if (__issSession.pots[coin2.id]) return __issSession.pots[coin2.id];
+      var h = 0, sx = coin2.id || 'x';
+      for (var i = 0; i < sx.length; i++) h = (h * 31 + sx.charCodeAt(i)) >>> 0;
+      var earned = Math.round((1.2 + (h % 48000) / 1000) * 1e6) / 1e6;
+      var p = { pending: Math.round(earned * (0.5 + ((h >>> 3) % 9) / 100) * 1e6) / 1e6, claimable: 0 };
+      __issSession.pots[coin2.id] = p;
+      return p;
+    }
+    function collectCurveFees() {
+      var p = issPot(coin);
+      if (!(p.pending > 0)) { Launch.toast('没有待收集的曲线费', 'warn'); return; }
+      var moved = p.pending;
+      p.claimable += moved; p.pending = 0;
+      Launch.toast('已收集曲线费 +' + Launch.fmtQty(Launch.qtyOfUsd(moved, coin.pair || 'ETH')) + ' ' + (coin.pair || 'ETH'), 'ok');
+      renderMeta();
+    }
+    function doIssuerClaim() {
+      var p = issPot(coin);
+      if (!(p.claimable > 0)) { Launch.toast('暂无可领取', 'warn'); return; }
+      var pair = coin.pair || 'ETH';
+      var qty = Launch.qtyOfUsd(p.claimable, pair);
+      if (Launch.credit) { Launch.credit(pair, qty); if (Launch.persist) Launch.persist(); }
+      else { Launch.USER.eth += Launch.usdToEth(p.claimable); if (Launch.persist) Launch.persist(); }
+      p.claimable = 0;
+      Launch.toast('已领取 ' + Launch.fmtQty(qty) + ' ' + pair, 'ok');
+      renderMeta();
+    }
+    function setFeeRoute(holders) {
+      if (!!coin.shareToHolders === !!holders) return;
+      coin.shareToHolders = !!holders;
+      renderMeta();   // 仅会话内切换，不落盘
+    }
+    function openTransfer() {
+      var m = document.getElementById('transferModal');
+      if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    }
+    function closeTransfer() {
+      var m = document.getElementById('transferModal');
+      if (m) m.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function confirmTransfer() {
+      var v = document.getElementById('tfInp').value.trim();
+      if (!/^0x[0-9a-fA-F]{6,}$/.test(v)) { Launch.toast('请输入有效地址', 'err'); return; }
+      saveIssRecv(coin, v);
+      closeTransfer();
+      Launch.toast('收款地址已更新', 'ok');
+      renderMeta();
+    }
+    function renderMeta() {
+      var host = document.getElementById('metaHost');
+      if (!host) return;
+      if (!coin || coin.graduated) { host.style.display = 'none'; host.innerHTML = ''; return; }
+      var pair = coin.pair || 'ETH';
+      var nm = coin.name || coin.symbol || 'Token';
+      var toHolders = !!coin.shareToHolders;
+      var h6 = 0, ss = coin.id || 'x';
+      for (var i6 = 0; i6 < ss.length; i6++) h6 = (h6 * 31 + ss.charCodeAt(i6)) >>> 0;
+      var r6 = function (x) { return Math.round(x * 1e6) / 1e6; };
+      var pxq = (window.Launch && Launch.assetPrice) ? (Launch.assetPrice(pair) || 1) : 1;
+      var q6 = function (x) { var v = r6(x / pxq); var s2 = v.toFixed(8).replace(/\.?0+$/, ''); return s2 || '0'; };
+      var earned = r6(1.2 + (h6 % 48000) / 1000);
+      var sweeps = 12 + (h6 % 120);
+      var paid = toHolders ? r6(earned * (0.6 + ((h6 >>> 5) % 35) / 100)) : 0;
+      var pot = toHolders ? r6(earned * (0.05 + ((h6 >>> 9) % 15) / 100)) : 0;
+      var claimable = toHolders ? 0 : r6(earned * (0.42 + ((h6 >>> 11) % 20) / 100));
+      var recv = issRecv(coin);
+      var sRecv = shortRecv(recv);
+      var dist = 1 + ((h6 >>> 7) % 10);
+      function valHtml(u) { return '<span class="ff-value num">' + q6(u) + ' <small>' + esc(pair) + '</small></span>'; }
+      var feeDemo = cdFeeDemo();
+      var fdNone = feeDemo === 'none';
+      var fdClaimed = feeDemo === 'claimed';
+      var fdReady = feeDemo === 'ready';
+      var isIssuer = __isMyCoin();
+      var html = '';
+      // 卡 1：Creator fees
+      html += '<div class="card fee-card">' +
+        '<div class="ff-head"><span class="ff-title">Creator fees</span></div>' +
+        '<div class="ff-assets">' + valHtml(earned) +
+          '<span class="ff-sub">Earned by ' + esc(nm) + ' across ' + sweeps + ' sweeps</span></div>';
+      if (toHolders) {
+        html += '<p class="ff-hint">Creator fees route to ' + esc(nm) + ' holders through the fee distributor. There is no creator claim.</p>';
+      } else {
+        if (isIssuer) {
+          var potI = issPot(coin);
+          // 收款人（+ Transfer）—— 附属信息行，不做金额
+          html += '<div class="ff-recip"><span class="ff-sub">Fee recipient</span>' +
+            '<span class="mono num" title="' + esc(recv) + '">' + esc(sRecv) + '</span>' +
+            '<button type="button" class="ff-transfer" onclick="openTransfer()">Transfer</button></div>';
+          // 待收集曲线费：Collect → 转入 Claimable（大数字）
+          html += '<div class="ff-assets">' + valHtml(potI.pending) +
+            '<span class="ff-sub">Pending curve fees — collect to your claimable balance</span></div>';
+          // 可领取（大数字）
+          html += '<div class="ff-assets">' + valHtml(potI.claimable) +
+            '<span class="ff-sub">Claimable now, paid to ' + esc(sRecv) + '</span></div>';
+          // 操作行：Collect / Claim {pair}
+          html += '<div class="ff-rowbtns">' +
+            (potI.pending > 0
+              ? '<button type="button" class="btn btn-ghost ff-act" onclick="collectCurveFees()">Collect curve fees</button>'
+              : '<span class="ff-hint" style="margin:0">Collected</span>') +
+            (potI.claimable > 0
+              ? '<button type="button" class="btn btn-ghost ff-act" onclick="doIssuerClaim()">Claim ' + esc(pair) + '</button>'
+              : (potI.pending > 0
+                ? '<span class="ff-hint" style="margin:0">Claim after collecting</span>'
+                : '<span class="ff-hint" style="margin:0">—</span>')) +
+            '</div>';
+        } else {
+          if (fdNone) {
+            html += '<div class="ff-assets">' + valHtml(0) + '<span class="ff-sub">No fees to claim.</span></div>' +
+              '<p class="ff-hint">Payable to ' + esc(sRecv) + '. Connect that wallet to claim.</p>';
+          } else if (fdClaimed) {
+            html += '<div class="ff-assets">' + valHtml(claimable) +
+              '<span class="ff-sub">Claimed · 已领取到 ' + esc(sRecv) + '</span></div>' +
+              '<span class="ff-hint" style="margin:0">已领取 · Claimed</span>';
+          } else {
+            html += '<div class="ff-assets">' + valHtml(claimable) +
+              '<span class="ff-sub">Claimable now, across every launch paid to ' + esc(sRecv) + '</span></div>' +
+              '<p class="ff-hint">Payable to ' + esc(sRecv) + '. Connect that wallet to claim.</p>';
+          }
+        }
+      }
+      html += '</div>';
+      // 卡 2：Holder fee sharing（含发行者路由切换）
+      html += '<div class="card fee-card">' +
+        '<div class="ff-head"><span class="ff-title">Holder fee sharing</span></div>';
+      if (isIssuer) {
+        html += '<div class="ff-route">' +
+          '<button type="button" class="' + (toHolders ? 'on' : '') + '" onclick="setFeeRoute(true)">Share fees with holders</button>' +
+          '<button type="button" class="' + (toHolders ? '' : 'on') + '" onclick="setFeeRoute(false)">Route to wallet ' + esc(sRecv) + '</button>' +
+          '</div>';
+      }
+      if (toHolders) {
+        __divAmt[coin.id] = r6(pot * (0.15 + ((h6 >>> 13) % 25) / 100));
+        var paidShow = fdNone ? 0 : paid;
+        var potShow = fdNone ? 0 : pot;
+        html += '<div class="ff-assets">' + valHtml(paidShow) +
+          '<span class="ff-sub">Paid to holders across ' + dist + ' distribution' + (dist === 1 ? '' : 's') + '</span></div>' +
+          '<div class="ff-assets">' + valHtml(potShow) +
+          '<span class="ff-sub">In the pot for the next distribution</span></div>';
+        if (fdNone) {
+          html += '<p class="ff-hint">Creator fees route to ' + esc(nm) + ' holders. No dividends to claim.</p>';
+        } else if (fdClaimed) {
+          html += '<p class="ff-hint">Creator fees route to ' + esc(nm) + ' holders.</p>' +
+            '<span class="ff-hint" style="margin:0">已领取本币分红 · Claimed</span>';
+        } else {
+          html += '<p class="ff-hint">Creator fees route to ' + esc(nm) + ' holders. Each holder claims their share from their profile menu.</p>' +
+            ((fdReady || __heldCoin()) && !__divClaimed(coin.id)
+              ? '<button class="btn btn-ghost ff-act" onclick="claimHolderDiv()">Claim dividends</button>'
+              : (__divClaimed(coin.id) ? '<span class="ff-hint" style="margin:0">已领取本币分红</span>' : ''));
+        }
+      } else {
+        html += '<div class="ff-assets">' + valHtml(0) +
+          '<span class="ff-sub">Routing off · 费当前归创建者钱包</span></div>' +
+          '<p class="ff-hint">未开启费共享：创作者费不分发给持有人。</p>';
+      }
+      html += '</div>';
+      host.innerHTML = html;
+      host.style.display = 'grid';
+    }
+
+
+    // ============ Swap ============
+    function refreshSwap() {
+      if (!coin) return;
+      var pair = coin.pair || 'ETH';
+      var held = Launch.USER.holdings[coin.id];
+      var heldAmt = held ? held.amount : 0;
+      var payBal = document.getElementById('payBalance');
+      var ptok = document.getElementById('payToken');
+      if (side === 'buy') {
+        var bal = Launch.balanceOf(paySym);
+        payBal.innerHTML = '可用 <b class="num">' + Launch.fmtQty(bal) + '</b> ' + esc(paySym) +
+          ' · <a class="faucet-mini" href="javascript:void(0)" onclick="faucetPay()" title="领取测试余额（$250 等值）">水龙头</a>';
+        ptok.innerHTML = chipHtml(paySym);
+        ptok.title = '选择支付资产（按配对资产计价结算）';
+        document.getElementById('outLabel').textContent = 'Buy';
+        document.getElementById('outToken').innerHTML = '<i>$</i> ' + esc(coin.symbol);
+      } else {
+        payBal.innerHTML = '持仓 <b class="num">' + (heldAmt >= 10000 ? (heldAmt / 1000).toFixed(1) + 'K' : Launch.fmtNum(Math.floor(heldAmt))) + '</b> ' + esc(coin.symbol);
+        ptok.innerHTML = '<i>$</i> ' + esc(coin.symbol);
+        ptok.title = '卖出数量（币）';
+        document.getElementById('outLabel').textContent = 'Buy';
+        document.getElementById('outToken').innerHTML = chipHtml(pair);
+      }
+      document.getElementById('swapBtn').textContent = side === 'buy' ? ('买入 ' + coin.symbol) : ('卖出 ' + coin.symbol);
+      var px = Launch.assetPrice(pair) || 1;
+      document.getElementById('sdPrice').innerHTML = '1 ' + esc(coin.symbol) + ' ≈ <b class="num">' +
+        Launch.fmtQty((coin.priceUsd || 0) / px) + '</b> ' + esc(pair);
+      updateQuote();
+    }
+    function chipHtml(sym) { return '<i>' + Launch.assetIcon(sym) + '</i> ' + esc(sym); }
+    function assetList() {
+      var pair = coin.pair || 'ETH';
+      return [
+        { g: '计价 · ' + pair, rows: [pair] },
+        { g: '加密资产', rows: ['ETH', 'WETH', 'USDG', 'cbBTC'].filter(function (x) { return x !== pair; }) },
+        { g: '股票', rows: Launch.pairStocks.filter(function (x) { return x !== pair; }) }
+      ];
+    }
+    function buildPayPop() {
+      var host = document.getElementById('assetPop');
+      if (!host) return;
+      var html = '';
+      assetList().forEach(function (grp) {
+        html += '<div class="ap-group">' + esc(grp.g) + '</div>';
+        grp.rows.forEach(function (sym) {
+          var bal = Launch.balanceOf(sym);
+          var px = Launch.assetPrice(sym);
+          html += '<div class="ap-row' + (sym === paySym ? ' on' : '') + (Launch.pairStocks.indexOf(sym) >= 0 ? ' stk' : '') +
+            '" data-sym="' + esc(sym) + '">' +
+            '<i class="ap-ic">' + Launch.assetIcon(sym) + '</i>' +
+            '<span class="ap-main"><span class="ap-code">' + esc(sym) + '</span><span class="ap-meta">' + (px != null ? '$' + px : '—') + '</span></span>' +
+            '<span class="ap-bal"><b class="num">' + Launch.fmtQty(bal) + '</b><span>余额</span></span></div>';
+        });
+      });
+      host.innerHTML = html;
+    }
+    function togglePayPop() {
+      var pop = document.getElementById('assetPop');
+      if (!pop) return;
+      if (pop.style.display === 'none') { buildPayPop(); pop.style.display = 'block'; }
+      else pop.style.display = 'none';
+    }
+    function selectPay(sym) {
+      if (!sym) return;
+      paySym = sym;
+      var pop = document.getElementById('assetPop');
+      if (pop) pop.style.display = 'none';
+      refreshSwap();
+    }
+    function faucetPay() {
+      if (side !== 'buy') return;
+      var q = Launch.faucet(paySym);
+      Launch.toast('已领取 ' + Launch.fmtQty(q) + ' ' + paySym + '（测试余额）', 'ok');
+      refreshSwap();
+    }
+    function updateQuote() {
+      var inp = parseFloat(document.getElementById('swapIn').value) || 0;
+      var outEl = document.getElementById('swapOut');
+      var err = document.getElementById('swapErr');
+      var warn = document.getElementById('swapWarn');
+      err.classList.remove('show'); warn.classList.remove('show');
+      if (!inp) { outEl.textContent = '0'; document.getElementById('sdImpact').textContent = '—'; return; }
+      var pv = Launch.preview(coin.id, side, inp, paySym);
+      if (!pv || !pv.ok) { outEl.textContent = '0'; if (pv && pv.msg) { err.textContent = pv.msg; err.classList.add('show'); } return; }
+      if (side === 'buy') {
+        outEl.textContent = fmtBig(pv.coins);
+        document.getElementById('sdImpact').textContent = '+' + (pv.impact * 2).toFixed(1) + '%';
+        if (!pv.balanceOk) { err.textContent = paySym + ' 余额不足 · 点水龙头领取测试余额'; err.classList.add('show'); }
+        if (pv.usd > 2000) { warn.textContent = '大额买入将显著推高价格'; warn.classList.add('show'); }
+      } else {
+        if (!pv.sellable || pv.sellable <= 0) {
+          outEl.textContent = '0';
+          err.textContent = pv.held > 0 ? '持仓不足' : '暂无持仓'; err.classList.add('show');
+          document.getElementById('sdImpact').textContent = '—';
+          return;
+        }
+        outEl.textContent = Launch.fmtQty(pv.proceedsQty);
+        document.getElementById('sdImpact').textContent = '-' + (pv.impact * 2).toFixed(1) + '%';
+        if (inp > pv.sellable) { warn.textContent = '持仓不足，按全部 ' + fmtBig(pv.sellable) + ' 卖出'; warn.classList.add('show'); }
+      }
+    }
+    function fmtBig(n) {
+      if (n == null || isNaN(n)) return '0';
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(2) + 'K';
+      return Launch.fmtNum(Math.floor(n));
+    }
+    // number 输入框只接受纯数字：最多保留 6 位小数
+    function qtyToInput(v) {
+      if (v == null || isNaN(v)) return '';
+      return String(Math.round(v * 1e6) / 1e6);
+    }
+    // ===== Slippage（pons：Slippage · Adjust 0.1–10%） =====
+    var slipBp = 100;
+    function slipPct() { return slipBp / 100; }
+    function setSlip(v) {
+      var n = parseFloat(v);
+      if (!(n > 0)) return;
+      slipBp = Math.round(Math.min(10, Math.max(0.1, n)) * 100);
+      slipUI();
+    }
+    function slipUI() {
+      var v = document.getElementById('slipVal');
+      var inp = document.getElementById('slipInput');
+      if (v) v.textContent = slipPct() + '%';
+      if (inp) inp.value = slipPct();
+    }
+    function toggleSlipEdit(force) {
+      var el = document.getElementById('slipEdit');
+      if (!el) return;
+      var show = typeof force === 'boolean' ? force : el.style.display === 'none';
+      el.style.display = show ? 'flex' : 'none';
+      if (show) {
+        var inp = document.getElementById('slipInput');
+        if (inp) { inp.value = slipPct(); inp.focus(); }
+      } else {
+        var inp2 = document.getElementById('slipInput');
+        if (inp2) setSlip(inp2.value);
+      }
+    }
+    function slipApply(v) { setSlip(v); updateQuote(); }
+
+    // ===== Review（pons：Review buy/sell → Confirm / Cancel） =====
+    var reviewPlan = null;
+    function rvRow(l, v) {
+      return '<div class="rv-row"><span class="rv-l">' + l + '</span><span class="rv-v">' + v + '</span></div>';
+    }
+    function openReview(side2, inp2, pv) {
+      reviewPlan = { side: side2, inp: inp2 };
+      var sym = coin.symbol, pair = coin.pair || 'ETH';
+      var isBuy = side2 === 'buy';
+      var sVal, rVal, min;
+      if (isBuy) {
+        sVal = Launch.fmtQty(inp2) + ' ' + paySym;
+        rVal = Launch.fmtQty(pv.coins) + ' ' + sym;
+        min = Launch.fmtQty(pv.coins * (1 - slipPct() / 100)) + ' ' + sym;
+      } else {
+        sVal = Launch.fmtQty(pv.coins) + ' ' + sym;
+        rVal = Launch.fmtQty(pv.proceedsQty) + ' ' + pair;
+        min = Launch.fmtQty(pv.proceedsQty * (1 - slipPct() / 100)) + ' ' + pair;
+      }
+      var market = coin.graduated ? 'Uniswap v4 pool' : 'Bonding curve';
+      document.getElementById('rvTitle').textContent = isBuy ? 'Review buy' : 'Review sell';
+      var fBuy = document.getElementById('rvFootBuy');
+      var fSell = document.getElementById('rvFootSell');
+      if (fBuy) fBuy.style.display = isBuy ? 'flex' : 'none';
+      if (fSell) fSell.style.display = isBuy ? 'none' : 'flex';
+      var cb = document.getElementById('rvConfirmBuy');
+      var cs = document.getElementById('rvConfirmSell');
+      if (cb) cb.textContent = 'Buy ' + sym;
+      if (cs) cs.textContent = 'Confirm sell';
+      // buy（pons Review buy）：You send / Minimum received / Maximum slippage / Network / Route
+      // sell（pons Review sell）：You send / You receive / Market / Max slippage
+      document.getElementById('rvBody').innerHTML = isBuy
+        ? rvRow('You send', sVal) +
+          rvRow('Minimum received', min) +
+          rvRow('Maximum slippage', slipPct().toFixed(2) + '%') +
+          rvRow('Network', 'Robinhood Chain (4663)') +
+          rvRow('Route', '0x aggregator')
+        : rvRow('You send', sVal) +
+          rvRow('You receive', rVal) +
+          rvRow('Market', market) +
+          rvRow('Max slippage', slipPct() + '%');
+      document.getElementById('reviewModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeReview() {
+      var m = document.getElementById('reviewModal');
+      if (m) m.classList.remove('open');
+      document.body.style.overflow = '';
+      reviewPlan = null;
+    }
+    function execReview() {
+      var plan = reviewPlan;
+      if (!plan) return;
+      var r = plan.side === 'buy' ? Launch.swap(coin.id, 'buy', plan.inp, paySym) : Launch.swap(coin.id, 'sell', plan.inp);
+      closeReview();
+      if (r && r.ok) {
+        if (plan.side === 'buy') {
+          Launch.toast('已买入 ' + fmtBig(r.coins) + ' ' + coin.symbol + ' · 支付 ' + Launch.fmtQty(plan.inp) + ' ' + (r.paySym || paySym), 'ok');
+          if (r.graduated) fireGradFx();
+        } else {
+          Launch.toast('已卖出 ' + fmtBig(r.coins) + ' ' + coin.symbol + ' · 收到 ' + Launch.fmtQty(r.proceedsQty) + ' ' + (r.pair || coin.pair), 'ok');
+        }
+        refreshAllAfterTx();
+        // 成交成功结果弹窗（pons：PONS received；毕业买不弹，走庆祝动效）
+        if (!(plan.side === 'buy' && r.graduated)) showDone(plan.side === 'buy', r);
+      } else if (r && r.msg === 'need_login') {
+        openLoginModal();
+      } else if (r) {
+        Launch.toast(r.msg || '交易失败', 'err');
+      }
+      document.getElementById('swapIn').value = '';
+      updateQuote();
+    }
+    function doSwap() {
+      if (!Launch.isLoggedIn()) { openLoginModal(); Launch.toast('登录后即可交易', 'warn'); return; }
+      var inp = parseFloat(document.getElementById('swapIn').value) || 0;
+      if (inp <= 0) { Launch.toast('输入有效金额', 'err'); return; }
+      var pv = Launch.preview(coin.id, side, inp, paySym);
+      if (!pv || !pv.ok) { Launch.toast((pv && pv.msg) || '报价失败', 'err'); return; }
+      if (side === 'buy' && !pv.balanceOk) { Launch.toast(paySym + ' 余额不足 · 点水龙头', 'err'); return; }
+      if (side === 'sell' && (!pv.sellable || pv.sellable <= 0)) { Launch.toast('暂无持仓', 'err'); return; }
+      openReview(side, inp, pv);
+    }
+    (function bindReview() {
+      var x = document.getElementById('rvClose');
+      var m = document.getElementById('reviewModal');
+      var cancels = ['rvCancelBuy', 'rvCancelSell'];
+      var oks = ['rvConfirmBuy', 'rvConfirmSell'];
+      cancels.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('click', closeReview);
+      });
+      oks.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('click', execReview);
+      });
+      if (x) x.addEventListener('click', closeReview);
+      if (m) m.addEventListener('click', function (e) { if (e.target === m) closeReview(); });
+    })();
+
+    // ---- 成交成功“收到资产”结果弹窗 ----
+    function showDone(isBuy, r) {
+      var m = document.getElementById('doneModal');
+      if (!m) return;
+      var pair = coin.pair || 'ETH';
+      var sym = coin.symbol;
+      var qty, asset, usd;
+      if (isBuy) {
+        qty = r.coins || 0;
+        asset = sym;
+        usd = qty * (coin.priceUsd || 0);
+      } else {
+        qty = r.proceedsQty || 0;
+        asset = pair;
+        var px = (window.Launch && Launch.assetPrice) ? (Launch.assetPrice(pair) || 0) : 0;
+        usd = qty * px;
+      }
+      document.getElementById('doneTitle').textContent = asset + ' received';
+      document.getElementById('doneAmt').textContent = Launch.fmtQty(qty);
+      document.getElementById('doneAsset').textContent = asset;
+      document.getElementById('doneRowAmt').textContent = Launch.fmtQty(qty) + ' ' + asset;
+      document.getElementById('doneVal').textContent = Launch.fmtUsd(usd);
+      m.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDone() {
+      var m = document.getElementById('doneModal');
+      if (m) m.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function doneTxDemo() {
+      Launch.toast('View transaction · 原型演示（无链上交易）', 'warn');
+    }
+    function doneSwapAgain() {
+      closeDone();
+      var inp = document.getElementById('swapIn');
+      if (inp) inp.focus();
+    }
+    (function bindDone() {
+      var m = document.getElementById('doneModal');
+      var tx = document.getElementById('doneTx');
+      var ag = document.getElementById('doneAgain');
+      if (tx) tx.addEventListener('click', doneTxDemo);
+      if (ag) ag.addEventListener('click', doneSwapAgain);
+      if (m) m.addEventListener('click', function (e) { if (e.target === m) closeDone(); });
+    })();
+
+    function refreshAllAfterTx() {
+      renderHead();
+      renderCurve();
+      renderTx();
+      renderChart();
+      refreshSwap();
+      ordShow();
+      renderMeta();
+    }
+
+    function fireGradFx() {
+      document.getElementById('gfTitle').textContent = coin.name + ' 已毕业';
+      var fx = document.getElementById('gradFx');
+      fx.classList.add('show');
+      setTimeout(function () { fx.classList.remove('show'); }, 2400);
+      document.getElementById('swapCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ============ Holders ============
+    function renderHolders() {
+      var names = ['0x7A2b…fD81', '0x9F3c…aa12', '0x1D8a…b40e', '0xE45b…77c9', '0x33A1…c8f0', '0xB20f…9e01'];
+      var isCreatorMine = __isMyCoin();
+      var base = [28, 16, 11, 8, 6, 5];
+      holders = base.map(function (p, i) {
+        return { addr: names[i % names.length], pct: p, creator: i === 0 };
+      });
+      if (isCreatorMine) { holders[0].creator = true; holders[0].addr = 'Creator'; }
+      document.getElementById('holdersTotal').textContent = Launch.fmtNum(coin.holders || 0);
+      pgTotalHold = Math.max(1, Math.ceil(holders.length / PAGE_SIZE));
+      pgHold = Math.max(1, Math.min(pgHold, pgTotalHold));
+      var off = (pgHold - 1) * PAGE_SIZE;
+      document.getElementById('holderList').innerHTML = holders.slice(off, off + PAGE_SIZE).map(function (h, i) {
+        return '<div class="holder-row">' +
+          '<span class="holder-rank">' + (off + i + 1) + '</span>' +
+          '<span class="holder-addr">' + esc(h.addr) + '</span>' +
+          (h.creator ? '<span class="holder-tag creator">Creator</span>' : '') +
+          '<span class="holder-pct num">' + h.pct + '%</span></div>';
+      }).join('');
+      paintPager();
+    }
+
+    // 翻页条：上/下一页（作用于当前可见页签）
+    (function bindRecPager() {
+      var prev = document.getElementById('pgPrev');
+      var next = document.getElementById('pgNext');
+      function activeIsHolders() {
+        var hp = document.getElementById('holdersPane');
+        return hp && hp.style.display !== 'none';
+      }
+      function turn(delta) {
+        if (activeIsHolders()) {
+          pgHold = Math.max(1, Math.min(pgHold + delta, pgTotalHold));
+          renderHolders();
+        } else {
+          pgTx = Math.max(1, Math.min(pgTx + delta, pgTotalTx));
+          renderTx();
+        }
+      }
+      if (prev) prev.addEventListener('click', function () { turn(-1); });
+      if (next) next.addEventListener('click', function () { turn(1); });
+    })();
+
+    // ============ 事件绑定 ============
+    document.addEventListener('click', function (e) {
+      var ar = e.target.closest('#assetPop .ap-row');
+      if (ar) { selectPay(ar.getAttribute('data-sym')); return; }
+      if (e.target.closest('.faucet-mini')) { faucetPay(); return; }
+      if (e.target.closest('#payToken')) { if (side === 'buy') togglePayPop(); return; }
+      var apEl = document.getElementById('assetPop');
+      if (apEl && apEl.style.display !== 'none' && !e.target.closest('#assetPop')) apEl.style.display = 'none';
+      if (e.target.closest('#swapArrow')) flipSwap();
+      var sb = e.target.closest('#swapSeg button');
+      if (sb) {
+        side = sb.getAttribute('data-s');
+        document.querySelectorAll('#swapSeg button').forEach(function (b) { b.classList.toggle('on', b === sb); });
+        refreshSwap();
+      }
+      var kb = e.target.closest('#kSeg button');
+      if (kb) {
+        range = kb.getAttribute('data-k');
+        document.querySelectorAll('#kSeg button').forEach(function (b) { b.classList.toggle('on', b === kb); });
+        chartRebuild();
+      }
+      var rb = e.target.closest('#recSeg button');
+      if (rb) {
+        var v = rb.getAttribute('data-v');
+        document.querySelectorAll('#recSeg button').forEach(function (b) { b.classList.toggle('on', b === rb); });
+        document.getElementById('txList').style.display = v === 'tx' ? '' : 'none';
+        document.getElementById('holdersPane').style.display = v === 'holders' ? '' : 'none';
+        if (v === 'holders') renderHolders();
+        else renderTx();
+        paintPager();
+      }
+      var qb = e.target.closest('#quickRow button');
+      if (qb) {
+        var p = parseFloat(qb.getAttribute('data-p'));
+        var qtyIn = null;
+        if (side === 'buy') qtyIn = Launch.balanceOf(paySym) * p;
+        else { var hq = Launch.USER.holdings[coin.id]; if (hq) qtyIn = hq.amount * p; }
+        if (qtyIn != null) document.getElementById('swapIn').value = qtyToInput(qtyIn);
+        updateQuote();
+      }
+    });
+    document.getElementById('swapIn').addEventListener('input', updateQuote);
+
+    // 调试身份开关（演示创建者 / 持有人 / 路人 门控语义）
+    (function () {
+      var seq = ['', 'creator', 'holder', 'other'];
+      var names = { '': '默认(当前钱包)', creator: '创建者', holder: '持有人', other: '路人' };
+      var dots = { '': '#a9a9c2', creator: '#8b5cf6', holder: '#16a34a', other: '#f59e0b' };
+      var css = document.createElement('style');
+      css.textContent = '#cdbgPill{position:fixed;right:12px;bottom:12px;z-index:900;display:inline-flex;align-items:center;gap:6px;max-width:78vw;padding:6px 12px 6px 9px;border:1px dashed #b9b9c9;border-radius:999px;background:#fff;color:#3a3a45;font:11px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.10);cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+        '#cdbgPill .cdbg-dot{width:8px;height:8px;border-radius:50%;flex:none;transition:background .2s}' +
+        '@media (max-width:900px){#cdbgPill{bottom:78px}}';
+      document.head.appendChild(css);
+      var pill = document.createElement('button');
+      pill.id = 'cdbgPill';
+      pill.type = 'button';
+      pill.title = '切换演示身份：创建者 / 持有人 / 路人 —— 仅影响本页 Creator fees / Holder fee sharing 与持有人列表的门控显示';
+      function paint() {
+        var r = __demoRole();
+        pill.innerHTML = '<i class="cdbg-dot"></i>调试身份：' + names[r];
+        pill.querySelector('.cdbg-dot').style.background = dots[r];
+      }
+      pill.addEventListener('click', function () {
+        var r = __demoRole();
+        var nx = seq[(seq.indexOf(r) + 1) % seq.length];
+        try { localStorage.setItem('sf_demo_role', nx); } catch (e) {}
+        paint();
+        if (window.Launch && typeof coin !== 'undefined' && coin && typeof renderMeta === 'function') { renderMeta(); renderHolders(); }
+        Launch.toast('演示身份 → ' + names[nx] + (nx ? '（仅演示门控语义）' : '（恢复真实钱包）'), 'ok');
+      });
+      paint();
+      document.body.appendChild(pill);
+    })();
+
+    // 费态演示：自动 / 待领取 / 已领取 / 无可领（仅影响本页费卡展示）
+    function cdFeeDemo() {
+      var v = '';
+      try { v = localStorage.getItem('sf_cd_fee_demo') || ''; } catch (e) {}
+      return (v === 'ready' || v === 'claimed' || v === 'none') ? v : '';
+    }
+    var CDF_LABEL = { ready: '费态: 待领取', claimed: '费态: 已领取', none: '费态: 无可领', '': '费态: 自动' };
+    function cdfLabel() { return CDF_LABEL[cdFeeDemo()] || '费态: 自动'; }
+    function cycleCdFee() {
+      var seq = ['', 'ready', 'claimed', 'none'];
+      var m = cdFeeDemo();
+      var nx = seq[(seq.indexOf(m) + 1) % seq.length];
+      try { if (nx) localStorage.setItem('sf_cd_fee_demo', nx); else localStorage.removeItem('sf_cd_fee_demo'); } catch (e) {}
+      var p = document.getElementById('cdfPill');
+      if (p) p.textContent = cdfLabel();
+      renderMeta();
+    }
+    (function () {
+      var css = document.createElement('style');
+      css.textContent = '#cdfPill{position:fixed;right:12px;bottom:58px;z-index:895;display:inline-flex;align-items:center;' +
+        'padding:6px 12px;border:1px dashed #b9b9c9;border-radius:999px;background:#fff;color:#3a3a45;' +
+        'font:11px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,.10);cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}' +
+        '@media (max-width:900px){#cdfPill{bottom:126px}}';
+      document.head.appendChild(css);
+      var pill = document.createElement('button');
+      pill.id = 'cdfPill';
+      pill.type = 'button';
+      pill.title = '切换费卡演示状态：自动 / 待领取 / 已领取 / 无可领（仅影响本页费卡显示）';
+      pill.textContent = cdfLabel();
+      pill.addEventListener('click', cycleCdFee);
+      document.body.appendChild(pill);
+    })();
+
+    window.onLaunchShellReady = function () {
+      // 快捷按钮
+      var qr = document.getElementById('quickRow');
+      qr.innerHTML = [0.25, 0.5, 1].map(function (p) {
+        return '<button data-p="' + p + '">' + (p === 1 ? 'MAX' : p * 100 + '%') + '</button>';
+      }).join('');
+      initCoin();
+      // 移动端交易底部弹层（≤820px）
+      var _mBar = document.getElementById('mTradeBar');
+      var _mClose = document.getElementById('mSheetClose');
+      var _mScrim = document.getElementById('mTradeScrim');
+      var setTradeOpen = function (open) {
+        document.body.classList.toggle('trade-open', !!open);
+        if (open && typeof refreshSwap === 'function') refreshSwap();
+      };
+      if (_mBar) _mBar.addEventListener('click', function () { setTradeOpen(true); });
+      if (_mClose) _mClose.addEventListener('click', function () { setTradeOpen(false); });
+      if (_mScrim) _mScrim.addEventListener('click', function () { setTradeOpen(false); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.body.classList.contains('trade-open')) setTradeOpen(false);
+      });
+      var _mq = window.matchMedia ? window.matchMedia('(min-width: 821px)') : null;
+      var _widen = function (m) { if (m.matches) setTradeOpen(false); };
+      if (_mq) {
+        if (_mq.addEventListener) _mq.addEventListener('change', _widen);
+        else if (_mq.addListener) _mq.addListener(_widen);
+      }
+    };
+  </script>
+  <script src="load-desktop-header.js"></script>
+  <script src="load-sidebar.js"></script>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

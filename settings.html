@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story.fun | 设置</title>
+  <style>
+    :root {
+      --bg: #f5faff;
+      --surface: #ffffff;
+      --accent: #000000;
+      --accent-soft: rgba(0, 0, 0, 0.10);
+      --text: #13202e;
+      --text-secondary: #5e6f83;
+      --text-tertiary: #8b8d98;
+      --border: #deeaf7;
+      --border-light: #e8f0fa;
+      --shadow-sm: 0 2px 8px rgba(27, 45, 71, 0.04);
+      --radius: 16px;
+      --radius-sm: 10px;
+      font-family: -apple-system, "PingFang SC", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    .app-shell { max-width: 720px; margin: 0 auto; padding: 24px 32px; }
+    @media (max-width: 640px) { .app-shell { padding: 16px; } }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 28px;
+      margin-bottom: 24px;
+    }
+    .page-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.015em; }
+    .page-header-back { display: none; width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(0,0,0,.05); color: var(--text); cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; }
+    .page-header-back:active { background: rgba(0,0,0,.1); }
+    /* 移动端：显示返回按钮，隐藏底部导航（仅本页，不影响桌面） */
+    @media (max-width: 768px) {
+      .page-header-back { display: inline-flex; }
+      .bottom-nav-wrapper { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+
+    /* ── 设置中心：子设置入口列表 ── */
+    .settings-group { margin-bottom: 24px; }
+    .settings-group-title {
+      font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+      letter-spacing: 0.03em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .settings-group-title::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+    .settings-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .settings-entry {
+      display: flex; align-items: center; gap: 14px; width: 100%;
+      padding: 15px 18px; border: none; background: none; cursor: pointer;
+      text-align: left; font-family: inherit; transition: background 0.15s ease;
+    }
+    .settings-entry + .settings-entry { border-top: 1px solid var(--border-light); }
+    .settings-entry:hover { background: rgba(0,0,0,0.02); }
+    .settings-entry:active { background: rgba(0,0,0,0.05); }
+    .settings-entry-icon {
+      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .settings-entry-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+    .settings-entry-body { flex: 1; min-width: 0; }
+    .settings-entry-label { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+    .settings-entry-arrow { color: #c3cdd9; font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ── Toast ── */
+    .toast-notification {
+      position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
+      background: rgba(19,32,46,0.92); color: #fff; padding: 10px 18px; border-radius: 999px;
+      font-size: 0.85rem; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 99999;
+      white-space: nowrap; backdrop-filter: blur(6px);
+    }
+    .toast-notification.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <button class="page-header-back" onclick="history.back()">‹</button>
+      <h1>设置</h1>
+      <div style="width:34px"></div>
+    </div>
+
+    <!-- ═══ 通知设置入口 ═══ -->
+    <div class="settings-group">
+      <div class="settings-group-title">⚙️ 通用</div>
+      <div class="settings-card">
+        <button class="settings-entry" onclick="location.href='notify-settings.html'">
+          <span class="settings-entry-icon" style="background:rgba(52,199,89,0.10);color:#34c759;">
+            <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </span>
+          <span class="settings-entry-body">
+            <span class="settings-entry-label">通知设置</span>
+          </span>
+          <span class="settings-entry-arrow">›</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ 预留入口（占位，后续迭代） ═══ -->
+    <div class="settings-group">
+      <div class="settings-group-title">🌐 偏好</div>
+      <div class="settings-card">
+        <button class="settings-entry" onclick="showToast('语言与地区 即将上线')">
+          <span class="settings-entry-icon" style="background:rgba(52,120,246,0.10);color:#3478f6;">
+            <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <span class="settings-entry-body">
+            <span class="settings-entry-label">语言与地区</span>
+          </span>
+          <span class="settings-entry-arrow">›</span>
+        </button>
+        <button class="settings-entry" onclick="showToast('账号与安全 即将上线')">
+          <span class="settings-entry-icon" style="background:rgba(255,159,44,0.10);color:#ff9f2c;">
+            <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <span class="settings-entry-body">
+            <span class="settings-entry-label">账号与安全</span>
+          </span>
+          <span class="settings-entry-arrow">›</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast-notification" id="toastNotification"><span id="toastMessage"></span></div>
+
+  <script src="load-sidebar.js"></script>
+  <script src="load-desktop-header.js?v=3"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ===== Toast =====
+    var toastTimer = null;
+    function showToast(msg) {
+      var t = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2000);
+    }
+  </script>
+  <div id="bottom-nav-placeholder"></div>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

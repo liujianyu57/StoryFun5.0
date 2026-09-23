@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story.fun | 通知设置</title>
+  <style>
+    :root {
+      --bg: #f5faff;
+      --surface: #ffffff;
+      --accent: #000000;
+      --accent-soft: rgba(0, 0, 0, 0.10);
+      --text: #13202e;
+      --text-secondary: #5e6f83;
+      --text-tertiary: #8b8d98;
+      --border: #deeaf7;
+      --border-light: #e8f0fa;
+      --shadow-sm: 0 2px 8px rgba(27, 45, 71, 0.04);
+      --radius: 16px;
+      --radius-sm: 10px;
+      font-family: -apple-system, "PingFang SC", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    .app-shell { max-width: 720px; margin: 0 auto; padding: 24px 32px; }
+    @media (max-width: 640px) { .app-shell { padding: 16px; } }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 28px;
+      margin-bottom: 24px;
+    }
+    .page-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.015em; }
+    .page-header-back { display: none; width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(0,0,0,.05); color: var(--text); cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; }
+    .page-header-back:active { background: rgba(0,0,0,.1); }
+    /* 移动端：显示返回按钮，隐藏底部导航（仅本页，不影响桌面） */
+    @media (max-width: 768px) {
+      .page-header-back { display: inline-flex; }
+      .bottom-nav-wrapper { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+
+    /* ── 设置分组 ── */
+    .settings-group { margin-bottom: 24px; }
+    .settings-group-title {
+      font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+      letter-spacing: 0.03em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .settings-group-title::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+    .settings-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 15px 18px;
+    }
+    .settings-row + .settings-row { border-top: 1px solid var(--border-light); }
+    .settings-row-label { font-size: 0.92rem; font-weight: 500; color: var(--text); }
+    .settings-row-sub { padding-left: 34px; }
+    .settings-row-sub .settings-row-label { font-size: 0.88rem; font-weight: 400; }
+
+    /* ── iOS 风格 Switch ── */
+    .switch { position: relative; display: inline-block; width: 46px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .switch .track {
+      position: absolute; inset: 0; border-radius: 999px; background: rgba(0,0,0,0.16);
+      transition: background 0.2s ease; cursor: pointer;
+    }
+    .switch .thumb {
+      position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease;
+    }
+    .switch input:checked + .track { background: #34c759; }
+    .switch input:checked + .track .thumb { transform: translateX(18px); }
+
+    /* ── Toast ── */
+    .toast-notification {
+      position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
+      background: rgba(19,32,46,0.92); color: #fff; padding: 10px 18px; border-radius: 999px;
+      font-size: 0.85rem; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 99999;
+      white-space: nowrap; backdrop-filter: blur(6px);
+    }
+    .toast-notification.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <button class="page-header-back" onclick="history.back()">‹</button>
+      <h1>通知设置</h1>
+      <div style="width:34px"></div>
+    </div>
+
+    <!-- ═══ 通知设置 ═══ -->
+    <div class="settings-group">
+      <div class="settings-group-title">🔔 通知设置</div>
+      <div class="settings-card">
+        <!-- 总开关 -->
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">接收通知</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="nsMaster" data-path="master">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+
+        <!-- 互动通知 -->
+        <div class="settings-row settings-row-sub" data-parent="master">
+          <div>
+            <div class="settings-row-label">互动通知</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="nsSocial" data-path="social" data-group="social">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="settings-row settings-row-sub" data-parent="social" style="padding-left:34px">
+          <div>
+            <div class="settings-row-label">点赞</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-path="social.like">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="settings-row settings-row-sub" data-parent="social" style="padding-left:34px">
+          <div>
+            <div class="settings-row-label">收藏</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-path="social.save">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="settings-row settings-row-sub" data-parent="social" style="padding-left:34px">
+          <div>
+            <div class="settings-row-label">评论</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-path="social.comment">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="settings-row settings-row-sub" data-parent="social" style="padding-left:34px">
+          <div>
+            <div class="settings-row-label">关注</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-path="social.follow">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast-notification" id="toastNotification"><span id="toastMessage"></span></div>
+
+  <script src="load-sidebar.js"></script>
+  <script src="load-desktop-header.js?v=3"></script>
+  <script src="auth.js"></script>
+  <script src="notify-settings.js"></script>
+  <script>
+    // ===== Toast =====
+    var toastTimer = null;
+    function showToast(msg) {
+      var t = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2000);
+    }
+
+    // ===== 渲染开关状态 =====
+    function renderSwitches() {
+      if (typeof window.StoryFunNotify === 'undefined') return;
+      var s = window.StoryFunNotify.getSettings();
+      document.querySelectorAll('.settings-card input[type="checkbox"]').forEach(function (input) {
+        var path = input.getAttribute('data-path');
+        var checked = false;
+        if (path === 'master') {
+          checked = !!s.master;
+        } else if (input.hasAttribute('data-group')) {
+          // 组开关：组内任意一项开启即为开
+          var group = s[path];
+          if (group) {
+            checked = Object.keys(group).some(function (k) { return group[k]; });
+          }
+        } else {
+          var parts = path.split('.');
+          var node = s[parts[0]];
+          checked = !!(node && node[parts[1]]);
+        }
+        input.checked = checked;
+      });
+      // 总开关关闭 → 子项视觉置灰
+      document.querySelectorAll('.settings-row[data-parent]').forEach(function (row) {
+        row.style.opacity = s.master ? '1' : '0.45';
+      });
+    }
+
+    // ===== 切换监听 =====
+    function bindSwitches() {
+      document.querySelectorAll('.settings-card input[type="checkbox"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          if (typeof window.StoryFunNotify === 'undefined') return;
+          var path = this.getAttribute('data-path');
+
+          if (path === 'master') {
+            window.StoryFunNotify.setNotifySetting('master', this.checked);
+            renderSwitches();
+            showToast(this.checked ? '已开启全部通知' : '已关闭全部通知');
+            return;
+          }
+
+          // 组开关由 bindGroupSwitches 单独处理，这里只处理叶子开关
+          window.StoryFunNotify.setNotifySetting(path, this.checked);
+        });
+      });
+    }
+
+    // 组开关处理（单独注册监听，避免闭包问题）
+    function bindGroupSwitches() {
+      var groupDefs = {
+        social: ['like', 'save', 'comment', 'follow']
+      };
+      document.querySelectorAll('.settings-card input[data-group]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          var group = this.getAttribute('data-group');
+          var on = this.checked;
+          var keys = groupDefs[group] || [];
+          keys.forEach(function (k) {
+            window.StoryFunNotify.setNotifySetting(group + '.' + k, on);
+          });
+          renderSwitches();
+          showToast(on ? '已开启互动通知' : '已关闭互动通知');
+        });
+      });
+    }
+
+    // ===== 初始化 =====
+    document.addEventListener('DOMContentLoaded', function () {
+      renderSwitches();
+      bindSwitches();
+      bindGroupSwitches();
+    });
+  </script>
+  <div id="bottom-nav-placeholder"></div>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

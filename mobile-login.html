@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Story.fun | 登录</title>
+  <style>
+    :root {
+      --accent: #000000;
+      --text: #13202e;
+      --text-muted: #5e6f83;
+      --border: #deeaf7;
+      font-family: "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #f5faff 0%, #e8f5f1 100%);
+      padding: 24px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .login-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .login-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .login-logo img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .login-header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .login-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .login-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px;
+      border-radius:999px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .login-btn:active { transform: scale(0.97); }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-email {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+    .btn-email:hover { background: #00a078; }
+    .login-tos {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .login-tos a { color: var(--accent); text-decoration: none; }
+    .login-tos a:hover { text-decoration: underline; }
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .loading-overlay.active { display: flex; }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast-notification {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      z-index: 99999;
+      background: rgba(26, 35, 47, 0.95);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 16px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      box-shadow: 0 12px 40px rgba(27, 45, 71, 0.25);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      max-width: 420px;
+      text-align: center;
+      font-weight: 500;
+    }
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      z-index: 10;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .close-btn:active { background: rgba(0, 0, 0, 0.12); }
+  </style>
+</head>
+<body>
+  <button class="close-btn" onclick="history.back()" aria-label="关闭">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>
+  </button>
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">
+        <img src="image/storyfun-logo-icon.png" alt="Story.fun" />
+      </div>
+      <h1>Story.fun</h1>
+    </div>
+
+    <div class="login-body">
+      <button class="login-btn btn-email" id="btnEmailLogin" onclick="doLogin('email')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+        使用邮箱登录
+      </button>
+      <button class="login-btn" onclick="doLogin('google')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg>
+        使用 Google 登录
+      </button>
+      <button class="login-btn" onclick="doLogin('twitter')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l16 16M20 4L4 20"/></svg>
+        使用 X 登录
+      </button>
+      <button class="login-btn" onclick="doLogin('wallet')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/><circle cx="18" cy="12" r="2"/></svg>
+        连接钱包
+      </button>
+    </div>
+
+    <p class="login-tos">
+      登录即创建你的链上钱包 · 由 Privy 提供（模拟）<br />
+      继续即表示同意 <a href="#">服务条款</a> 和 <a href="#">隐私政策</a>
+    </p>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="toast-notification" id="toastNotification">
+    <span class="toast-icon">💡</span>
+    <span id="toastMessage"></span>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    (function() {
+      // 获取重定向目标
+      var params = new URLSearchParams(location.search);
+      var redirectTarget = params.get('redirect') || 'index.html';
+
+      // 如果已登录，直接跳转
+      if (typeof currentUser !== 'undefined' && currentUser && currentUser.isLoggedIn) {
+        location.href = redirectTarget;
+        return;
+      }
+
+      // 等待 currentUser 可用（auth.js 可能还在初始化）
+      var checkInterval = setInterval(function() {
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.isLoggedIn) {
+          clearInterval(checkInterval);
+          location.href = redirectTarget;
+        }
+      }, 200);
+
+      // 5秒后清除检查
+      setTimeout(function() { clearInterval(checkInterval); }, 5000);
+
+      // 监听登录成功事件
+      document.addEventListener('auth-ready', function() {
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.isLoggedIn) {
+          setTimeout(function() {
+            location.href = redirectTarget;
+          }, 600);
+        }
+      });
+    })();
+
+    function showToast(msg, icon) {
+      var t = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').textContent = msg;
+      if (icon) t.querySelector('.toast-icon').textContent = icon;
+      t.style.transform = 'translateX(-50%) translateY(0)';
+      t.style.opacity = '1';
+      clearTimeout(window._mlToastTimer);
+      window._mlToastTimer = setTimeout(function() {
+        t.style.transform = 'translateX(-50%) translateY(-100px)';
+        t.style.opacity = '0';
+      }, 3000);
+    }
+
+    // 四种入口统一走 auth.js 的 Privy 模拟流程；成功后由 auth-ready 监听跳转
+    function doLogin(method) {
+      if (method === 'email') { if (typeof openLoginModal === 'function') openLoginModal(); return; }
+      if (method === 'wallet') { if (typeof openWalletPicker === 'function') openWalletPicker(); return; }
+      if (typeof authSocial === 'function') { authSocial(method); return; }
+      showToast('登录方式不可用，请刷新重试', '💡');
+    }
+
+    // 如果 toast 覆盖了 showToast，处理兼容
+    if (typeof window.showToast === 'undefined') {
+      window.showToast = showToast;
+    }
+  </script>
+</body>
+</html>

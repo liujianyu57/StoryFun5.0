@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storyfun | 版本内容过滤</title>
+  <link rel="stylesheet" href="admin-shared.css" />
+  <style>
+    /* ── 版本卡片 ── */
+    .ver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+    .ver-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      background: #f8fbfe; transition: background 0.15s, border-color 0.15s;
+    }
+    .ver-card.off { background: #fafcfe; border-color: #eff4fa; }
+    .ver-no {
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em;
+    }
+    .ver-card.off .ver-no { color: var(--text-tertiary); }
+    .ver-state { font-size: 0.75rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+    .ver-card.off .ver-state { color: var(--text-tertiary); }
+    /* ── 版本分组（iOS / Android 各自一份列表） ── */
+    .ver-group + .ver-group { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-light); }
+    .grp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; flex-wrap: wrap; }
+    .grp-name { font-size: 0.92rem; font-weight: 700; }
+    .grp-cnt { font-size: 0.78rem; color: var(--text-tertiary); }
+    .grp-cnt b { color: var(--text); }
+    .grp-head .btn-sm-outline { margin-left: auto; }
+    .ver-group .empty-state { padding: 26px 0; }
+
+    /* ── 开关 ── */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; margin-left: auto; cursor: pointer; }
+    .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .switch .track { position: absolute; inset: 0; background: #cfd8e3; border-radius: 999px; transition: background 0.2s; }
+    .switch .track::after {
+      content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+      border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(19, 32, 46, 0.28); transition: transform 0.2s;
+    }
+    .switch input:checked + .track { background: var(--accent); }
+    .switch input:checked + .track::after { transform: translateX(18px); }
+    .switch input:focus-visible + .track { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+    /* ── 小图标按钮 ── */
+    .icon-btn {
+      width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; border-radius: 6px; color: var(--text-tertiary);
+      font-size: 0.82rem; cursor: pointer; transition: background 0.15s, color 0.15s; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+    .icon-btn.danger:hover { background: rgba(244, 91, 105, 0.10); color: var(--danger); }
+    /* Banner 星标 */
+    .icon-btn.star { font-size: 0.95rem; color: #c7d2de; }
+    .icon-btn.star:hover { background: rgba(245, 176, 66, 0.14); color: var(--gold); }
+    .icon-btn.star.on { color: var(--gold); }
+    .icon-btn.star.on:hover { background: rgba(244, 91, 105, 0.10); color: var(--danger); }
+    .icon-btn.star.dim { opacity: 0.45; }
+
+    /* ── ID 清单 ── */
+    .list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .list-grid { grid-template-columns: 1fr; } }
+    .cnt {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 26px; padding: 2px 9px;
+      border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 0.75rem; font-weight: 700;
+    }
+    .cnt.zero { background: #f0f4fa; color: var(--text-tertiary); }
+    .cnt.banner { background: rgba(245, 176, 66, 0.14); color: #b8801f; }
+    .cnt.banner.full { background: rgba(244, 91, 105, 0.12); color: var(--danger); }
+    .title-badges { display: inline-flex; align-items: center; gap: 6px; }
+    .id-tools { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .tf {
+      width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); font-size: 0.84rem; color: var(--text);
+      outline: none; transition: border-color 0.15s; font-family: inherit;
+    }
+    .tf:focus { border-color: var(--accent); }
+    textarea.tf { resize: none; line-height: 1.5; }
+    .id-paste { flex: 1; }
+    .id-search { margin-bottom: 10px; }
+    .id-list { max-height: 360px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px; }
+    .id-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border-light); }
+    .id-row:last-child { border-bottom: none; }
+    .id-row:hover { background: #f8fbfe; }
+    .id-row.is-banner { background: rgba(245, 176, 66, 0.11); }
+    .id-row.is-banner:hover { background: rgba(245, 176, 66, 0.18); }
+    .id-code { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.79rem; font-weight: 600; flex-shrink: 0; }
+    .id-name { flex: 1; min-width: 0; font-size: 0.81rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .id-name.none { color: var(--text-tertiary); }
+    .id-list .empty-state { padding: 40px 16px; }
+    .id-hint { margin-top: 10px; font-size: 0.76rem; color: var(--text-tertiary); line-height: 1.6; }
+    .warn-text { color: #d4942a; font-weight: 600; }
+
+    /* ── 弹窗内表单 ── */
+    .fld { margin-bottom: 14px; }
+    .fld > label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .err { margin-top: 6px; font-size: 0.76rem; color: var(--danger); display: none; }
+    .err.show { display: block; }
+    .fld-hint { font-size: 0.76rem; color: var(--text-tertiary); line-height: 1.65; }
+    .fld-hint b { color: var(--text-secondary); }
+    .modal-box .modal-foot { gap: 8px; }
+    .cf-warn {
+      display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--radius-sm);
+      background: rgba(255, 159, 44, 0.08); border: 1px solid rgba(255, 159, 44, 0.22);
+      font-size: 0.83rem; color: var(--text-secondary); line-height: 1.7;
+    }
+    .cf-warn b { color: var(--text); }
+    .btn-sm.btn-danger { background: var(--danger); }
+    .btn-sm.btn-danger:hover { box-shadow: 0 4px 12px rgba(244, 91, 105, 0.3); }
+
+    /* ── 演示提示 & 轻提示 ── */
+    .demo-tip { margin: 4px 0 28px; font-size: 0.78rem; color: var(--text-tertiary); }
+    .toast {
+      position: fixed; right: 24px; bottom: 24px; z-index: 6000; max-width: 380px;
+      padding: 11px 18px; border-radius: var(--radius-sm); background: #13202e; color: #fff;
+      font-size: 0.82rem; line-height: 1.5; box-shadow: 0 10px 30px rgba(19, 32, 46, 0.25);
+      opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 768px) { .toast { right: 16px; left: 16px; bottom: 16px; max-width: none; } }
+  </style>
+</head>
+<body>
+  <div id="admin-sidebar-placeholder"></div>
+  <div class="app-shell">
+    <div class="page-header">
+      <div>
+        <h1>📋 版本内容过滤</h1>
+        <div class="sub">维护一份全局内容白名单，按 APP 版本开关控制是否生效；生效版本只展示白名单内的内容（推荐、短剧、搜索、Banner 接口）</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="card-title">版本过滤开关</div>
+      <div id="verGroups"></div>
+    </div>
+
+    <div class="list-grid">
+      <div class="section-card">
+        <div class="card-title">短剧 ID 白名单<span class="title-badges">
+            <span class="cnt banner" id="bannerCnt">Banner 0/5</span>
+            <span class="cnt" id="dramaCnt">0</span>
+          </span></div>
+        <div class="id-tools">
+          <textarea class="tf id-paste" id="dramaPaste" rows="2" placeholder="粘贴多个 ID，支持换行 / 逗号 / 空格分隔"></textarea>
+          <button class="btn-sm" onclick="addIds('drama')">＋ 添加</button>
+        </div>
+        <input class="tf id-search" id="dramaSearch" type="text" placeholder="🔍 搜索 ID 或短剧名称" oninput="renderIds('drama')" />
+        <div class="id-list" id="dramaList"></div>
+        <div class="id-hint">★ 标记的短剧作为 App 推荐页 Banner 展示，最多 5 个；仅在白名单生效的版本可见</div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-title">短视频 ID 白名单<span class="cnt" id="videoCnt">0</span></div>
+        <div class="id-tools">
+          <textarea class="tf id-paste" id="videoPaste" rows="2" placeholder="粘贴多个 ID，支持换行 / 逗号 / 空格分隔"></textarea>
+          <button class="btn-sm" onclick="addIds('video')">＋ 添加</button>
+        </div>
+        <input class="tf id-search" id="videoSearch" type="text" placeholder="🔍 搜索 ID 或短视频描述" oninput="renderIds('video')" />
+        <div class="id-list" id="videoList"></div>
+      </div>
+    </div>
+
+    <div class="demo-tip">💡 演示数据，刷新后重置</div>
+  </div>
+
+  <script src="load-admin-sidebar.js"></script>
+
+  <!-- ── 新增版本 ── -->
+  <div class="modal-overlay" id="modalAddVersion">
+    <div class="modal-box" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 id="addVerTitle">新增版本</h3>
+        <button class="modal-close" onclick="closeModal('modalAddVersion')">✕</button>
+      </div>
+      <div class="fld">
+        <label>Build 号 *</label>
+        <input class="tf" id="newVer" type="text" inputmode="numeric" maxlength="8" placeholder="请输入 Build 号，如 123" oninput="clearVerErr()" />
+        <div class="err" id="verErr"></div>
+      </div>
+      <div class="fld-hint">ⓘ 白名单默认开启，新版本将只展示白名单内的 <b id="tipDrama">0</b> 个短剧、<b id="tipVideo">0</b> 个短视频</div>
+      <div class="modal-foot">
+        <button class="btn-sm-outline" onclick="closeModal('modalAddVersion')">取消</button>
+        <button class="btn-sm" onclick="submitAddVersion()">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 删除确认 ── -->
+  <div class="modal-overlay" id="modalConfirm">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="cfTitle">删除确认</h3>
+        <button class="modal-close" onclick="closeModal('modalConfirm')">✕</button>
+      </div>
+      <div id="cfMsg"></div>
+      <div class="modal-foot">
+        <button class="btn-sm-outline" onclick="closeModal('modalConfirm')">取消</button>
+        <button class="btn-sm btn-danger" id="cfOk">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var LABEL = { drama: '短剧', video: '短视频' };
+      var ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
+      var BANNER_MAX = 5;   // 短剧白名单里最多挑 5 个作为 Banner
+      var BUILD_RE = /^\d{1,8}$/;   // Build 号：纯数字，如 123
+      // 两端发布节奏不同，版本按平台各自维护
+      var PLATFORMS = [
+        { key: 'ios', name: 'iOS', emoji: '🍎' },
+        { key: 'android', name: 'Android', emoji: '🤖' }
+      ];
+      var addPlatform = PLATFORMS[0].key;
+
+      // ── 演示数据（内存态，刷新即还原） ──
+      var state = {
+        versions: [
+          { p: 'ios', v: '120', on: false },
+          { p: 'ios', v: '121', on: false },
+          { p: 'ios', v: '122', on: false },
+          { p: 'ios', v: '123', on: true },
+          { p: 'android', v: '118', on: false },
+          { p: 'android', v: '119', on: false },
+          { p: 'android', v: '120', on: false },
+          { p: 'android', v: '121', on: true }
+        ],
+        dramas: [
+          { id: 'D10023', banner: true },
+          { id: 'D10045', banner: true },
+          { id: 'D10067', banner: true },
+          { id: 'D10088' }, { id: 'D10102' }, { id: 'D10135' }, { id: 'D10158' },
+          { id: 'D10177' }, { id: 'D10196' }, { id: 'D10214' }, { id: 'D10233' },
+          { id: 'D10251' }, { id: 'D10270' }, { id: 'D10288' }
+        ],
+        videos: [
+          { id: 'V20345' }, { id: 'V20346' }, { id: 'V20388' }, { id: 'V20401' },
+          { id: 'V20417' }, { id: 'V20433' }, { id: 'V20452' }, { id: 'V20468' },
+          { id: 'V20471' }, { id: 'V20490' }, { id: 'V20503' }, { id: 'V20518' },
+          { id: 'V20536' }, { id: 'V20544' }, { id: 'V20561' }, { id: 'V20579' }
+        ]
+      };
+
+      // ── 演示用内容库 ──
+      // 真实系统里：白名单只存 ID，短剧名称 / 短视频描述由内容服务按 ID 查询后回显
+      var CONTENT = {
+        drama: {
+          D10023: '总裁的替身新娘',
+          D10045: '重生之豪门千金',
+          D10067: '闪婚老公是首富',
+          D10088: '千金归来复仇记',
+          D10102: '我的霸道总裁',
+          D10135: '暗夜追凶',
+          D10158: '穿越之农门医女',
+          D10177: '豪门弃女归来',
+          D10196: '天才宝宝三岁半',
+          D10214: '权谋天下',
+          D10233: '薄先生的心尖宠',
+          D10251: '夫人你马甲又掉了',
+          D10270: '战神归来',
+          D10288: '离婚后我成了首富'
+        },
+        video: {
+          V20345: '美食探店：巷子里的老面馆',
+          V20346: '街头搞笑：社死瞬间合集',
+          V20388: '护肤教程：三分钟学会',
+          V20401: '萌宠日常：猫咪的早晨',
+          V20417: '舞蹈翻跳：热门口袋舞',
+          V20433: '游戏高光：极限反杀',
+          V20452: '健康科普：颈椎放松操',
+          V20468: '影视解说：五分钟看完',
+          V20471: '旅行 vlog：海边日落',
+          V20490: '手工 DIY：旧物改造',
+          V20503: '理财避坑：三个常见误区',
+          V20518: '亲子互动：周末手工',
+          V20536: '脱口秀：职场吐槽',
+          V20544: '生活技巧：收纳整理',
+          V20561: 'AI 绘画：生成过程记录',
+          V20579: '情感语录：深夜电台'
+        }
+      };
+
+      // 演示兜底：库里没有的 ID 也回显一个确定性名称，保证任意 ID 都能看到回显效果
+      var NAME_POOL = {
+        drama: ['雪落无声', '长安旧梦', '她的第二次心动', '半城烟雨半城沙', '医女当家',
+                '龙隐都市', '傅少的心尖刺', '云端之恋', '重返十八岁', '山海不为远'],
+        video: ['美食探店：深夜食堂', '街头采访：路人神回复', '宠物日常：狗子拆家记', '健身教学：十分钟核心',
+                '手工教程：毛线编织', '旅行记录：山间清晨', '游戏实况：新版本试玩', '影视混剪：经典镜头']
+      };
+
+      var confirmCb = null;
+      var toastTimer = null;
+
+      // ── 工具 ──
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+      function $(id) { return document.getElementById(id); }
+      function listOf(kind) { return kind === 'drama' ? state.dramas : state.videos; }
+      function hashStr(s) {
+        var h = 0;
+        for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+        return h;
+      }
+      // 按 ID 回显短剧名称 / 短视频描述
+      function nameOf(kind, id) {
+        var hit = CONTENT[kind][id];
+        if (hit) return hit;
+        var pool = NAME_POOL[kind];
+        return pool[hashStr(kind + ':' + id) % pool.length];
+      }
+      function enabledCount() {
+        return state.versions.filter(function (v) { return v.on; }).length;
+      }
+      function showToast(msg) {
+        var el = $('toast');
+        el.textContent = msg;
+        el.className = 'toast show';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { el.className = 'toast'; }, 2600);
+      }
+      function openModal(id) { $(id).classList.add('open'); }
+      function closeModal(id) { $(id).classList.remove('open'); }
+
+      // ── Build 号倒序比较器（纯数字，按数值比大小） ──
+      function verCmpDesc(a, b) { return Number(b) - Number(a); }
+      function verDesc(a, b) { return verCmpDesc(a.v, b.v); }
+      function platOf(key) {
+        for (var i = 0; i < PLATFORMS.length; i++) { if (PLATFORMS[i].key === key) return PLATFORMS[i]; }
+        return { key: key, name: key, emoji: '' };
+      }
+      function versionsOf(p) {
+        return state.versions.filter(function (x) { return x.p === p; }).sort(verDesc);
+      }
+      function findVersion(p, v) {
+        for (var i = 0; i < state.versions.length; i++) {
+          if (state.versions[i].p === p && state.versions[i].v === v) return state.versions[i];
+        }
+        return null;
+      }
+
+      // ── 版本过滤开关：iOS / Android 两份独立列表，各自增删开关 ──
+      function renderVersions() {
+        state.versions.sort(verDesc);
+        $('verGroups').innerHTML = PLATFORMS.map(function (pf) {
+          var list = versionsOf(pf.key);
+          var body = list.length
+            ? '<div class="ver-grid">' + list.map(function (it) {
+                return '<div class="ver-card' + (it.on ? '' : ' off') + '">' +
+                  '<span class="ver-no">' + esc(it.v) + '</span>' +
+                  '<label class="switch" title="' + (it.on ? '点击关闭该版本白名单（关闭后不受限制，展示全部内容）' : '点击开启该版本白名单（开启后只展示白名单内的内容）') + '">' +
+                    '<input type="checkbox"' + (it.on ? ' checked' : '') +
+                      ' onchange="toggleVersion(\'' + pf.key + '\',\'' + esc(it.v) + '\', this.checked, this)">' +
+                    '<span class="track"></span>' +
+                  '</label>' +
+                  '<span class="ver-state">' + (it.on ? '生效' : '已停用') + '</span>' +
+                  '<button class="icon-btn danger" title="删除版本（可随时重新添加）" ' +
+                    'onclick="removeVersion(\'' + pf.key + '\',\'' + esc(it.v) + '\')">✕</button>' +
+                '</div>';
+              }).join('') + '</div>'
+            : '<div class="empty-state">还没有配置 ' + pf.name + ' 版本<br>点上方「＋ 新增版本」开始配置</div>';
+
+          return '<div class="ver-group">' +
+            '<div class="grp-head">' +
+              '<span class="grp-name">' + pf.emoji + ' ' + pf.name + '</span>' +
+              '<span class="grp-cnt" id="verCnt-' + pf.key + '"></span>' +
+              '<button class="btn-sm-outline" onclick="openAddVersion(\'' + pf.key + '\')">＋ 新增版本</button>' +
+            '</div>' + body +
+          '</div>';
+        }).join('');
+        renderVerCounts();
+      }
+
+      function renderVerCounts() {
+        PLATFORMS.forEach(function (pf) {
+          var list = versionsOf(pf.key);
+          var on = list.filter(function (x) { return x.on; }).length;
+          var el = $('verCnt-' + pf.key);
+          if (el) {
+            el.innerHTML = list.length
+              ? list.length + ' 个版本 · 生效 <b>' + on + '</b> · 停用 <b>' + (list.length - on) + '</b>'
+              : '';
+          }
+        });
+      }
+
+      function toggleVersion(p, v, checked, input) {
+        var it = findVersion(p, v);
+        if (!it) return;
+        it.on = !!checked;
+        var card = input && input.closest ? input.closest('.ver-card') : null;
+        if (card) {
+          card.classList.toggle('off', !it.on);
+          card.querySelector('.ver-state').textContent = it.on ? '生效' : '已停用';
+          var sw = card.querySelector('.switch');
+          if (sw) sw.title = it.on ? '点击关闭该版本白名单（关闭后不受限制，展示全部内容）' : '点击开启该版本白名单（开启后只展示白名单内的内容）';
+        }
+        renderVerCounts();
+      }
+
+      // ── 新增版本：平台由入口决定，Build 号手动输入 ──
+      function showVerErr(msg) {
+        var el = $('verErr');
+        el.textContent = msg;
+        el.classList.add('show');
+        $('newVer').focus();
+      }
+
+      function clearVerErr() { $('verErr').classList.remove('show'); }
+
+      function openAddVersion(platform) {
+        if (platform) addPlatform = platform;
+        $('addVerTitle').textContent = '新增 ' + platOf(addPlatform).name + ' 版本';
+        clearVerErr();
+        $('tipDrama').textContent = state.dramas.length;
+        $('tipVideo').textContent = state.videos.length;
+        $('newVer').value = '';
+        openModal('modalAddVersion');
+        $('newVer').focus();
+      }
+
+      function submitAddVersion() {
+        var v = ($('newVer').value || '').trim();
+        if (!v) return showVerErr('请输入 Build 号');
+        if (!BUILD_RE.test(v)) return showVerErr('Build 号只支持数字，如 123');
+        if (findVersion(addPlatform, v)) return showVerErr('该平台下 Build ' + v + ' 已存在');
+        state.versions.push({ p: addPlatform, v: v, on: true });
+        renderVersions();
+        closeModal('modalAddVersion');
+      }
+
+      // 删除版本不做二次确认：白名单是全局共享的，版本上只有开关，
+      // 加回来只是「新增版本 → 选号 → 创建」，成本极低
+      function removeVersion(p, v) {
+        for (var i = 0; i < state.versions.length; i++) {
+          if (state.versions[i].p === p && state.versions[i].v === v) {
+            state.versions.splice(i, 1);
+            renderVersions();
+            return;
+          }
+        }
+      }
+
+      // ── ID 清单 ──
+      function bannerCount() {
+        return state.dramas.filter(function (it) { return it.banner; }).length;
+      }
+      function indexOfId(list, id) {
+        for (var i = 0; i < list.length; i++) { if (list[i].id === id) return i; }
+        return -1;
+      }
+
+      function renderIds(kind) {
+        var list = listOf(kind);
+        var box = $(kind + 'List');
+        var cnt = $(kind + 'Cnt');
+        cnt.textContent = list.length;
+        cnt.classList.toggle('zero', !list.length);
+
+        if (kind === 'drama') {
+          var bc = $('bannerCnt');
+          bc.textContent = 'Banner ' + bannerCount() + '/' + BANNER_MAX;
+          bc.classList.toggle('full', bannerCount() >= BANNER_MAX);
+        }
+
+        if (!list.length) {
+          var onCnt = enabledCount();
+          box.innerHTML = '<div class="empty-state"><div class="big">📭</div>' + LABEL[kind] + ' ID 白名单为空<br>' +
+            (onCnt
+              ? '<span class="warn-text">当前 ' + onCnt + ' 个生效版本将看不到任何' + LABEL[kind] + '</span>'
+              : '当前没有生效版本，暂无影响') +
+            '<br>粘贴 ID 后点「添加」，名称自动回显</div>';
+          return;
+        }
+
+        var q = ($(kind + 'Search').value || '').trim().toLowerCase();
+        var shown = list.filter(function (it) {
+          if (!q) return true;
+          return it.id.toLowerCase().indexOf(q) !== -1 || nameOf(kind, it.id).toLowerCase().indexOf(q) !== -1;
+        });
+
+        if (!shown.length) {
+          box.innerHTML = '<div class="empty-state">没有匹配「' + esc(q) + '」的 ID</div>';
+          return;
+        }
+
+        var full = bannerCount() >= BANNER_MAX;
+        box.innerHTML = shown.map(function (it) {
+          var id = it.id, name = nameOf(kind, id);
+          var star = '';
+          if (kind === 'drama') {
+            star = '<button class="icon-btn star' + (it.banner ? ' on' : (full ? ' dim' : '')) + '" title="' +
+              (it.banner ? '取消 Banner 标记' : (full ? 'Banner 已达上限 ' + BANNER_MAX + ' 个，请先取消一个' : '设为 Banner'))
+              + '" onclick="toggleBanner(\'' + esc(id) + '\')">' + (it.banner ? '★' : '☆') + '</button>';
+          }
+          return '<div class="id-row' + (it.banner ? ' is-banner' : '') + '">' +
+            '<span class="id-code">' + esc(id) + '</span>' +
+            '<span class="id-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
+            star +
+            '<button class="icon-btn danger" title="移出白名单（移出后生效版本将看不到该内容）" onclick="askDeleteId(\'' + kind + '\',\'' + esc(id) + '\')">✕</button>' +
+          '</div>';
+        }).join('');
+      }
+
+      // 白名单里最多挑 5 个短剧作为 App Banner
+      function toggleBanner(id) {
+        var list = state.dramas;
+        var idx = indexOfId(list, id);
+        if (idx < 0) return;
+        var it = list[idx];
+        if (!it.banner && bannerCount() >= BANNER_MAX) {
+          showToast('Banner 最多 ' + BANNER_MAX + ' 个，请先取消一个再设置');
+          return;
+        }
+        it.banner = !it.banner;
+        renderIds('drama');
+      }
+
+      function addIds(kind) {
+        var box = $(kind + 'Paste');
+        var list = listOf(kind);
+        var parts = (box.value || '').split(/[\s,，、;；]+/).filter(function (s) { return s.length; });
+        if (!parts.length) { showToast('请先粘贴或输入要加入白名单的' + LABEL[kind] + ' ID'); return; }
+
+        var seen = {};
+        list.forEach(function (it) { seen[it.id] = true; });
+
+        var added = 0, dup = 0, bad = 0, fresh = [];
+        parts.forEach(function (p) {
+          var id = p.toUpperCase();
+          if (!ID_RE.test(id)) { bad++; return; }
+          if (seen[id]) { dup++; return; }
+          seen[id] = true;
+          fresh.push({ id: id });
+          added++;
+        });
+
+        if (added) {
+          fresh.forEach(function (it) { list.push(it); });
+          box.value = '';
+          renderIds(kind);
+        }
+
+        var msg = [];
+        if (added) msg.push('已添加 ' + added + ' 个' + LABEL[kind] + ' ID');
+        if (dup) msg.push(dup + ' 个已存在，已跳过');
+        if (bad) msg.push(bad + ' 个格式不合法，已忽略');
+        showToast(msg.join('；'));
+      }
+
+      function askDeleteId(kind, id) {
+        var list = listOf(kind);
+        var idx = indexOfId(list, id);
+        if (idx < 0) return;
+        var wasBanner = !!list[idx].banner;
+        var on = enabledCount();
+        var impact = on
+          ? '当前 <b>' + on + '</b> 个生效版本将立即不再展示该' + LABEL[kind] + '。'
+          : '当前没有生效版本，删除后无实际影响。';
+        var bannerLine = wasBanner ? '该短剧已设为 <b>Banner</b>，标记将一并移除。' : '';
+        openConfirm('移出' + LABEL[kind] + '白名单',
+          '<div class="cf-warn"><span>⚠</span><span><b>' + esc(nameOf(kind, id)) + '</b>（' + esc(id) + '）' +
+          '将从白名单中移除。' + impact + bannerLine + '重新加入需要再次粘贴该 ID。</span></div>', '移出', function () {
+            list.splice(idx, 1);
+            renderIds(kind);
+            closeModal('modalConfirm');
+          });
+      }
+
+      // ── 删除确认（版本 / ID 共用） ──
+      function openConfirm(title, msgHtml, okText, onOk) {
+        $('cfTitle').textContent = title;
+        $('cfMsg').innerHTML = msgHtml;
+        $('cfOk').textContent = okText || '确定';
+        confirmCb = onOk;
+        openModal('modalConfirm');
+      }
+
+      // ── 全局事件 ──
+      $('cfOk').addEventListener('click', function () { if (confirmCb) confirmCb(); });
+
+      ['modalAddVersion', 'modalConfirm'].forEach(function (id) {
+        var ov = $(id);
+        ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(id); });
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          ['modalAddVersion', 'modalConfirm'].forEach(function (id) { closeModal(id); });
+          return;
+        }
+        if (e.key !== 'Enter') return;
+        if ($('modalAddVersion').classList.contains('open')) { e.preventDefault(); submitAddVersion(); }
+      });
+
+      // ── 初始化 ──
+      window.renderIds = renderIds;
+      window.openAddVersion = openAddVersion;
+      window.clearVerErr = clearVerErr;
+      window.submitAddVersion = submitAddVersion;
+      window.toggleVersion = toggleVersion;
+      window.removeVersion = removeVersion;
+      window.addIds = addIds;
+      window.toggleBanner = toggleBanner;
+      window.askDeleteId = askDeleteId;
+      window.closeModal = closeModal;
+
+      renderVersions();
+      renderIds('drama');
+      renderIds('video');
+    })();
+  </script>
+</body>
+</html>

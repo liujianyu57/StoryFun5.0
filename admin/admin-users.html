@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storyfun | 用户概览</title>
+  <link rel="stylesheet" href="admin-shared.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div id="admin-sidebar-placeholder"></div>
+  <div class="app-shell">
+    <div class="page-header">
+      <div>
+        <h1>👥 用户概览</h1>
+        <div class="sub">注册 / 创作者 / 发射者渗透 · 活跃 · 人均（UTC 口径）</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card accent">
+        <span class="stat-ico">👥</span>
+        <div class="stat-label">注册用户数</div>
+        <div class="stat-value num" id="uTotal">—</div>
+        <div class="stat-sub">近 7 天新增 <b id="uNew7" style="color:#05DF72;"></b> · 近 30 天新增 <b id="uNew30" style="color:#05DF72;"></b></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-ico">✍️</span>
+        <div class="stat-label">创作者数量 / 占比</div>
+        <div class="stat-value num" id="uCreator">—</div>
+        <div class="stat-ratio" id="uCreatorPct"></div>
+        <div class="stat-sub">发布过内容单元的用户 ÷ 注册用户</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-ico">🚀</span>
+        <div class="stat-label">发射者数量 / 占比</div>
+        <div class="stat-value num" id="uLauncher">—</div>
+        <div class="stat-ratio" id="uLauncherPct"></div>
+        <div class="stat-sub">发射过代币的用户 ÷ 注册用户</div>
+      </div>
+    </div>
+
+    <div class="mini-grid" style="margin-bottom:20px;">
+      <div class="mini-stat"><div class="l">DAU（最新日）</div><div class="v num" id="uDau"></div><div class="s" id="uDauSub"></div></div>
+      <div class="mini-stat"><div class="l">最新 WAU</div><div class="v num" id="uWau"></div><div class="s">自然周去重活跃</div></div>
+      <div class="mini-stat"><div class="l">最新 MAU</div><div class="v num" id="uMau"></div><div class="s">自然月去重活跃</div></div>
+      <div class="mini-stat"><div class="l">人均在线时长（最新日）</div><div class="v num" id="uOnline"></div><div class="s">总时长 ÷ 当日活跃用户</div></div>
+      <div class="mini-stat"><div class="l">人均登录次数（最新日）</div><div class="v num" id="uLogin"></div><div class="s">总次数 ÷ 当日活跃用户</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="card-title">活跃趋势
+        <span style="display:inline-flex;gap:4px;" id="trendSeg">
+          <button class="btn-sm-outline active" data-g="day" onclick="setTrend('day')">DAU</button>
+          <button class="btn-sm-outline" data-g="week" onclick="setTrend('week')">WAU</button>
+          <button class="btn-sm-outline" data-g="month" onclick="setTrend('month')">MAU</button>
+        </span>
+      </div>
+      <div id="chartTrend" class="chart-lg" style="height:280px;"></div>
+    </div>
+
+  </div>
+
+  <script src="load-admin-sidebar.js"></script>
+  <script src="admin-mock-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var M = window.SFMock; if (!M) return;
+      var DAY = M.DAY, NOW = M.NOW;
+      var users = M.users || [], daily = M.daily || [], weekly = M.weekly || [], months = M.months || [];
+      var fmtNum = M.helpers.fmtNum, fmtMD = M.helpers.fmtMD, pct = M.helpers.pct;
+      function put(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+
+      var total = users.length;
+      var d7 = NOW - 7 * DAY, d30 = NOW - 30 * DAY, n7 = 0, n30 = 0;
+      users.forEach(function (u) { if (u.regTs >= d7) n7++; if (u.regTs >= d30) n30++; });
+      put('uTotal', fmtNum(total)); put('uNew7', '+' + fmtNum(n7)); put('uNew30', '+' + fmtNum(n30));
+      var creators = users.filter(function (u) { return u.isCreator; }).length;
+      var launchers = users.filter(function (u) { return u.isLauncher; }).length;
+      put('uCreator', fmtNum(creators)); put('uCreatorPct', pct(creators, total));
+      put('uLauncher', fmtNum(launchers)); put('uLauncherPct', pct(launchers, total));
+
+      var last = daily[daily.length - 1];
+      var avgDau = Math.round(daily.slice(-30).reduce(function (s, d) { return s + d.dau; }, 0) / 30);
+      put('uDau', fmtNum(last.dau)); put('uDauSub', '近 30 日均 ' + fmtNum(avgDau));
+      put('uWau', fmtNum(weekly[weekly.length - 1].wau));
+      put('uMau', fmtNum(months[months.length - 1].mau));
+      put('uOnline', last.avgOnline + ' 分');
+      put('uLogin', last.avgLogin.toFixed(1) + ' 次');
+
+      var trendChart = echarts.init(document.getElementById('chartTrend'));
+      window.addEventListener('resize', function () { trendChart.resize(); });
+      function renderTrend(g) {
+        var data, label, name;
+        if (g === 'week') {
+          var ws = weekly.slice(-12);
+          data = ws.map(function (w) { return w.wau; });
+          label = ws.map(function (w) { return w.label; });
+          name = 'WAU';
+        } else if (g === 'month') {
+          data = months.map(function (m) { return m.mau; });
+          label = months.map(function (m) { return m.label; });
+          name = 'MAU';
+        } else {
+          var ds = daily.slice(-30);
+          data = ds.map(function (d) { return d.dau; });
+          label = ds.map(function (d) { return fmtMD(d.ts); });
+          name = 'DAU';
+        }
+        trendChart.setOption({
+          color: ['#00b388'],
+          tooltip: { trigger: 'axis', confine: true },
+          grid: { left: 14, right: 20, top: 26, bottom: 4, containLabel: true },
+          xAxis: { type: 'category', data: label, axisLine: { lineStyle: { color: '#deeaf7' } }, axisTick: { show: false }, axisLabel: { fontSize: 10, color: '#8b8d98', interval: Math.max(0, Math.floor(label.length / 10)) } },
+          yAxis: { type: 'value', splitLine: { lineStyle: { color: '#eef3fa' } }, axisLabel: { fontSize: 10, color: '#8b8d98', formatter: function (v) { return fmtNum(v); } } },
+          series: [{ name: name, type: 'line', smooth: true, showSymbol: false, data: data, areaStyle: { opacity: 0.08 } }],
+        }, true);
+      }
+      window.setTrend = function (g) {
+        document.querySelectorAll('#trendSeg button').forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-g') === g);
+        });
+        renderTrend(g);
+      };
+      renderTrend('day');
+
+    })();
+  </script>
+</body>
+</html>
