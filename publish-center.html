@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Story.fun | 发布中心</title>
+  <link rel="stylesheet" href="launch.css" />
+  <link rel="stylesheet" href="publish-center.css" />
+</head>
+<body class="pc pc-mode-center">
+
+  <!-- 由 load-desktop-header.js 注入统一顶栏 -->
+
+  <main>
+
+  <!-- ============================================================
+       ① 发布中心
+       ============================================================ -->
+  <section class="pc-view pc-view-center">
+    <div class="pc-center">
+      <div class="pc-hero">
+        <h1>发布中心</h1>
+        <p>一次发布，把作品和代币一起发出去。</p>
+      </div>
+
+      <!-- —— ① 发布内容 —— -->
+      <div class="pc-step">
+        <div class="pc-step-head">
+          <span class="pc-step-no">1</span>
+          <span class="pc-step-title">发布内容</span>
+          <span class="pc-step-hint" id="kindHint">短剧与短视频二选一</span>
+        </div>
+        <div id="kindArea"></div>
+      </div>
+
+      <!-- —— ② 发行代币 —— -->
+      <div class="pc-step">
+        <div class="pc-step-head">
+          <span class="pc-step-no">2</span>
+          <span class="pc-step-title">发行代币？</span>
+          <span class="pc-step-hint" id="coinHint">选择是否同时发行代币</span>
+        </div>
+        <div id="coinArea"></div>
+      </div>
+
+      <!-- —— 提交 —— -->
+      <div class="pc-submit">
+        <button class="pc-submit-btn" id="submitBtn" disabled>发布</button>
+        <div class="pc-submit-note" id="submitNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ② 短剧子视图
+       ============================================================ -->
+  <section class="pc-view pc-view-drama">
+    <div class="pc-sub">
+      <div class="pc-bar">
+        <button class="pc-back" onclick="PC.backToCenter()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          发布
+        </button>
+        <span class="pc-bar-title" id="dramaBarTitle">短剧 · 基本信息</span>
+        <div class="pc-bar-acts" id="dramaBarActs"></div>
+      </div>
+
+      <!-- 步骤条（桌面） -->
+      <div class="pc-steps" id="dramaSteps">
+        <div class="pc-step-item is-active" data-step="1">
+          <span class="pc-step-circle">1</span><span class="pc-step-text">基本信息</span>
+        </div>
+        <span class="pc-step-sep">›</span>
+        <div class="pc-step-item" data-step="2">
+          <span class="pc-step-circle">2</span><span class="pc-step-text">剧集管理</span>
+        </div>
+      </div>
+
+      <!-- Step 1：基本信息 -->
+      <div id="dramaStep1">
+        <div class="pc-panel">
+          <div class="pc-panel-body">
+            <div class="pc-row full">
+              <div class="pc-field">
+                <label class="pc-label">短剧标题</label>
+                <input class="pc-input" type="text" id="drTitle" placeholder="请输入短剧标题" maxlength="30" />
+                <div class="pc-count"><span id="drTitleCount">0</span>/30</div>
+              </div>
+            </div>
+            <div class="pc-row full">
+              <div class="pc-field">
+                <label class="pc-label">简介</label>
+                <textarea class="pc-textarea" id="drDesc" placeholder="讲述一个什么样的故事…"></textarea>
+                <div class="pc-count"><span id="drDescCount">0</span>/500</div>
+              </div>
+            </div>
+            <div class="pc-row full">
+              <div class="pc-field">
+                <label class="pc-label">封面</label>
+                <div class="pc-cover" id="drCoverZone">
+                  <div class="pc-cover-ico">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </div>
+                  <p>点击或拖拽上传封面图<br /><strong>支持 JPG、PNG</strong></p>
+                </div>
+                <input type="file" id="drCoverInput" accept="image/*" style="display:none" />
+              </div>
+            </div>
+            <div class="pc-row full">
+              <div class="pc-field">
+                <label class="pc-label">标签 <span class="opt">可多选</span></label>
+                <div class="pc-tags" id="drTags"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pc-panel-foot">
+            <span class="pc-hint" style="margin:0">填好后进入剧集管理</span>
+            <button class="pc-btn is-primary is-lg" id="drNextBtn" onclick="PC.drama.goStep(2)">下一步：剧集管理 →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2：剧集管理 -->
+      <div id="dramaStep2" style="display:none">
+        <div class="pc-panel">
+          <div class="pc-panel-body">
+            <div class="pc-drop" id="drDropZone">
+              <div class="pc-drop-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              </div>
+              <div class="pc-drop-title">点击或拖拽上传视频</div>
+              <p>提交后会按视频名称自动排序</p>
+              <div class="pc-drop-hint">
+                <span>支持 mp4 / flv / wmv / asf / mkv / avi / rm / rmvb / mpg / mpeg / mov / webm</span>
+                <span>单集不短于 30 秒，整剧总时长 &gt; 10 分钟，单个文件 ≤ 3GB</span>
+              </div>
+              <input type="file" id="drVideoInput" multiple
+                accept="video/mp4,video/x-flv,video/x-ms-wmv,video/x-ms-asf,video/x-matroska,video/avi,video/x-msvideo,application/vnd.rn-realmedia,video/x-pn-realvideo,video/mpeg,video/quicktime,video/webm" />
+            </div>
+
+            <div id="drQueueWrap" style="display:none">
+              <div class="pc-queue-head">
+                <h4>已添加的视频</h4>
+                <span class="n" id="drQueueCount">0 个文件</span>
+              </div>
+              <div class="pc-queue-tip">💡 填写分集描述有助于更精准的流量推荐</div>
+              <div id="drQueueItems"></div>
+              <div class="pc-queue-head" style="border-top:1px solid var(--c-border);border-bottom:none;margin-top:6px;padding-top:14px;border-bottom:none">
+                <span class="n" id="drStats"></span>
+                <span></span>
+              </div>
+            </div>
+            <div id="drQueueEmpty" class="pc-queue-empty" style="display:none">暂无视频文件，请点击上方区域添加</div>
+          </div>
+          <div class="pc-panel-foot">
+            <button class="pc-btn is-lg" onclick="PC.drama.goStep(1)">← 上一步</button>
+            <button class="pc-btn is-primary is-lg" onclick="PC.confirmDrama()">确定</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ③ 短视频子视图
+       ============================================================ -->
+  <section class="pc-view pc-view-video">
+    <div class="pc-sub">
+      <div class="pc-bar">
+        <button class="pc-back" onclick="PC.backToCenter()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          发布
+        </button>
+        <span class="pc-bar-title" id="videoBarTitle">短视频 · 选择视频</span>
+        <div class="pc-bar-acts" id="videoBarActs"></div>
+      </div>
+
+      <!-- 移动端：素材库 -->
+      <div class="pc-gallery" id="videoGallery">
+        <div class="pc-gal-head">
+          <h3>从素材库选择</h3>
+          <span class="n">共 <span id="galCount">0</span> 条</span>
+        </div>
+        <div class="pc-grid" id="videoGrid"></div>
+      </div>
+
+      <!-- 桌面端：上传 + 已选卡 -->
+      <div class="pc-desk-only" id="videoDeskArea">
+        <div class="pc-drop" id="vdDropZone">
+          <div class="pc-drop-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="pc-drop-title">点击或拖拽上传视频</div>
+          <p>选择您要发布的视频文件 · 支持 MP4、MOV、WebM</p>
+          <input type="file" id="vdFileInput" accept="video/mp4,video/mov,video/webm,video/quicktime" />
+        </div>
+      </div>
+
+      <!-- 已选视频卡（两端共用） -->
+      <div class="pc-sel-card" id="videoSelCard" style="display:none">
+        <div class="pc-sel-video">
+          <video id="vdPreview" src="" muted playsinline preload="metadata"></video>
+        </div>
+        <div class="pc-sel-info">
+          <h3 id="vdSelName">—</h3>
+          <div class="meta-row">
+            <span id="vdSelDur">--</span>
+            <span id="vdSelSize">--</span>
+            <span id="vdSelState"></span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="pc-btn" onclick="PC.video.preview()">预览</button>
+            <button class="pc-btn" onclick="PC.video.reset()">重新选择</button>
+          </div>
+          <div class="pc-cover-mini">
+            <span class="lbl">封面</span>
+            <img id="vdCoverThumb" alt="点击更换封面" title="点击更换封面" style="display:none" />
+            <div class="ph" id="vdCoverPh" onclick="PC.video.pickCover()">＋</div>
+            <input type="file" id="vdCoverInput" accept="image/*" style="display:none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 描述 -->
+      <div class="pc-panel" id="videoMetaPanel" style="display:none">
+        <div class="pc-panel-body">
+          <div class="pc-field">
+            <label class="pc-label">描述</label>
+            <textarea class="pc-textarea" id="vdDesc" placeholder="添加作品描述…" rows="4" style="min-height:88px"></textarea>
+            <div class="pc-count"><span id="vdDescCount">0</span>/100</div>
+          </div>
+        </div>
+        <div class="pc-panel-foot">
+          <span class="pc-hint" style="margin:0">确定后返回发布中心</span>
+          <button class="pc-btn is-primary is-lg" onclick="PC.confirmVideo()">确定</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ④ 代币子视图
+       ============================================================ -->
+  <section class="pc-view pc-view-coin">
+    <div class="pc-sub">
+      <div class="pc-bar">
+        <button class="pc-back" onclick="PC.backToCenter()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          发布
+        </button>
+        <span class="pc-bar-title">填写代币信息</span>
+        <div class="pc-bar-acts">
+          <button class="pc-btn is-primary" onclick="PC.confirmCoin()">确定</button>
+        </div>
+      </div>
+
+      <div class="pc-coin-grid">
+        <!-- 主列 -->
+        <div class="pc-coin-main">
+          <!-- 关联作品（只读，来自发布中心） -->
+          <section class="pc-kpane">
+            <div class="pc-kpane-pad">
+              <div id="coinAttach"></div>
+            </div>
+          </section>
+
+          <!-- 代币信息 -->
+          <section class="pc-kpane">
+            <div class="pc-kpane-pad">
+              <div class="pc-ktitle" style="margin-bottom:16px">发行代币</div>
+              <div class="pc-kform">
+                <div class="pc-kcol">
+                  <div class="pc-kfield-label">名称</div>
+                  <input class="pc-kinput" id="pName" maxlength="60" placeholder="币名" autocomplete="off" />
+                </div>
+                <div class="pc-kcol">
+                  <div class="pc-kfield-label">代号</div>
+                  <input class="pc-kinput" id="pSymbol" maxlength="20" placeholder="代号" style="text-transform:uppercase" autocomplete="off" />
+                  <div class="pc-knote" id="symErr" style="color:#B91C1C;display:none"></div>
+                </div>
+                <div class="pc-wide">
+                  <div class="pc-kfield-label">简介</div>
+                  <textarea class="pc-ktextarea" id="pTag" rows="2" maxlength="250" placeholder="代币的一句话简介"></textarea>
+                </div>
+                <div class="pc-wide">
+                  <div class="pc-kfield-label">币图 <span class="opt">默认取作品封面</span></div>
+                  <div class="pc-kup">
+                    <label class="pc-kup-box" id="uploadBox" title="选择币图">
+                      <span class="plus" id="upPlus">＋</span>
+                      <img id="upImg" alt="" style="display:none" />
+                      <input type="file" id="upFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <div>
+                      <span class="pc-kup-copy" id="upCopy" onclick="document.getElementById('upFile').click()">选择图片</span>
+                      <div class="pc-knote" id="upNote">未选择时使用作品封面</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="pc-kfield-label">X 链接 <span class="opt">选填</span></div>
+                  <div class="pc-prefixed">
+                    <span>x.com/</span>
+                    <input class="pc-kinput" id="pX" maxlength="15" placeholder="handle" autocomplete="off" />
+                  </div>
+                </div>
+                <div>
+                  <div class="pc-kfield-label">Telegram <span class="opt">选填</span></div>
+                  <div class="pc-prefixed">
+                    <span>t.me/</span>
+                    <input class="pc-kinput" id="pTg" maxlength="32" placeholder="community" autocomplete="off" />
+                  </div>
+                </div>
+                <div class="pc-wide">
+                  <div class="pc-kfield-label">配对资产</div>
+                  <div class="pc-dd" id="pairDD">
+                    <button type="button" class="pc-dd-trigger" id="pairTrigger" aria-haspopup="listbox" aria-expanded="false">
+                      <span class="pc-dd-current">
+                        <span class="pc-dd-ico eth" id="pairIco">Ξ</span>
+                        <span id="pairCur">ETH</span>
+                      </span>
+                      <span class="pc-dd-chevron" aria-hidden="true">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                      </span>
+                    </button>
+                    <div class="pc-dd-menu" id="pairMenu" role="listbox" aria-label="配对资产" style="display:none">
+                      <div class="pc-dd-scroll" id="pairScroll"></div>
+                    </div>
+                  </div>
+                  <div class="pc-knote" id="pairNote">正在读取毕业阈值…</div>
+                </div>
+                <div class="pc-wide">
+                  <div class="pc-kfield-label">开发者预买 <span class="opt">选填</span></div>
+                  <div class="pc-buy">
+                    <input class="pc-kinput pc-num" id="pDevBuy" type="number" min="0" step="any" value="0" placeholder="0.00" />
+                    <span class="pc-buy-tok" id="devBuyTok">ETH</span>
+                  </div>
+                  <div class="pc-devbuy-meta">
+                    <span id="devBuyBal"></span>
+                    <button type="button" class="pc-devbuy-max" id="devBuyMax" style="display:none" onclick="PC.coin.devBuyMax()">Max</button>
+                  </div>
+                  <div class="pc-devbuy-faucet">
+                    <span>余额不足？这是演示钱包</span>
+                    <button type="button" class="pc-faucet-btn" id="faucetBtn" onclick="PC.coin.faucetTap()">领取 $250 等值 <b id="faucetSym">ETH</b></button>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="pc-adv-divider" />
+              <button class="pc-adv-toggle closed" id="advToggle" onclick="PC.coin.toggleAdv()">
+                <span>高级设置</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="pc-adv-body" id="advBody">
+                <div class="pc-adv-row pc-col">
+                  <span class="lbl">创作者费分成</span>
+                  <div class="pc-hfs-cards">
+                    <button type="button" class="pc-hfs-card" id="hfsHolders" aria-pressed="false" onclick="PC.coin.setHfs(true)">
+                      <span class="pc-hfs-head">
+                        <span class="pc-hfs-radio" aria-hidden="true"></span>
+                        <span class="pc-hfs-title">创作者费分给持有人</span>
+                      </span>
+                      <span class="pc-hfs-body">发射后还需两次链上确认：部署分发合约，并把每一笔创作者费路由给持有人。路由一旦完成即永久生效。</span>
+                    </button>
+                    <button type="button" class="pc-hfs-card on" id="hfsWallet" aria-pressed="true" onclick="PC.coin.setHfs(false)">
+                      <span class="pc-hfs-head">
+                        <span class="pc-hfs-radio" aria-hidden="true"></span>
+                        <span class="pc-hfs-title">创作者费归创作者钱包</span>
+                      </span>
+                      <span class="pc-hfs-body">创作者费与创作者税均打入下方钱包。</span>
+                      <span class="pc-hfs-wallet">
+                        <span class="pc-hfs-wallet-lbl">创作者钱包</span>
+                        <input class="pc-kinput pc-num" id="pCreatorWallet" placeholder="0x7A2b…3fD8" autocomplete="off" spellcheck="false" />
+                        <span class="pc-hfs-wallet-note">接收创作者费与创作者税；留空则使用当前连接的钱包。</span>
+                      </span>
+                    </button>
+                  </div>
+                  <input type="checkbox" id="shareToHolders" style="display:none" />
+                </div>
+                <div class="pc-adv-row pc-col">
+                  <span class="lbl">创作者税</span>
+                  <div class="pc-tax-entry">
+                    <input class="pc-kinput pc-num" id="pTaxPct" type="number" inputmode="decimal" min="0" max="10" step="0.01" value="0" placeholder="0" autocomplete="off" oninput="PC.coin.taxNoteLive()" />
+                    <span class="pc-tax-suffix" aria-hidden="true">%</span>
+                  </div>
+                  <span class="pc-knote" id="taxNote"></span>
+                </div>
+                <div class="pc-adv-row pc-col">
+                  <span class="lbl">狙击税豁免</span>
+                  <div class="pc-snipe-entry">
+                    <input class="pc-kinput pc-num" id="snipeInput" placeholder="0x 钱包地址" autocomplete="off" spellcheck="false" />
+                    <button type="button" class="pc-snipe-add" id="snipeAddBtn" disabled aria-label="把钱包加入豁免名单" onclick="PC.coin.snipeAdd()">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                  </div>
+                  <div class="pc-snipe-list" id="snipeList"></div>
+                  <span class="pc-knote pc-snipe-note" id="snipeNote">发射首秒内的买入收 99% 狙击税，3 秒内衰减至 0。请声明你团队开局使用的钱包。</span>
+                </div>
+              </div>
+              <div class="pc-warn" id="paramErr"></div>
+            </div>
+          </section>
+
+          <div class="pc-kactions">
+            <div>
+              <div class="pc-kdue"><b class="pc-num" id="duePair">ETH</b><span id="dueRest"> 配对 · 应付发行费 <b class="pc-num">0.0005 ETH</b></span></div>
+              <div class="pc-kgas" id="gasEst">⛽ 网络费预估 —</div>
+            </div>
+            <button class="pc-btn is-primary is-lg" id="coinConfirmBtn" onclick="PC.confirmCoin()">确定</button>
+          </div>
+          <div class="pc-warn" id="createErr"></div>
+        </div>
+
+        <!-- 右列预览 -->
+        <aside class="pc-coin-aside">
+          <div class="pc-kpane pc-kpane-pad">
+            <div class="pc-pv-img" id="pvImgBox"><span class="ph" id="pvPh">＋</span><img id="pvImg" alt="" style="display:none" /></div>
+            <div class="pc-pv-id">
+              <span class="pc-pv-name" id="sumName">新代币</span>
+              <span class="pc-pv-ticker pc-num" id="sumSym">$TICKER</span>
+            </div>
+            <div class="pc-pv-rows">
+              <div class="pc-pv-row"><span>发行费</span><b class="pc-num">0.0005 ETH</b></div>
+              <div class="pc-pv-row"><span>配对资产</span><b class="pc-num" id="sumPair">ETH</b></div>
+              <div class="pc-pv-row"><span>交易费</span><b class="pc-num" id="sumFee">1.00%</b></div>
+              <div class="pc-pv-row"><span>发射窗口</span><b>首 3 秒 99% 狙击税</b></div>
+              <div class="pc-pv-row"><span>毕业</span><b class="ok pc-num" id="sumGrad">—</b></div>
+              <div class="pc-pv-row"><span>流动性</span><b class="ok">永久锁定</b></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- ============================================================
+       弹窗
+       ============================================================ -->
+
+  <!-- 发布确认 -->
+  <div class="pc-modal" id="reviewModal">
+    <div class="pc-modal-card is-wide" role="dialog" aria-modal="true" aria-label="确认发布">
+      <div class="pc-modal-head">
+        <span class="pc-modal-title">确认发布</span>
+        <button class="pc-modal-x" onclick="PC.closeReview()" aria-label="关闭">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="pc-modal-note" id="reviewSub">请核对以下内容</div>
+      <div id="reviewRows"></div>
+      <div class="pc-modal-acts">
+        <button class="pc-modal-cancel" onclick="PC.closeReview()">取消</button>
+        <button class="pc-modal-ok" id="reviewOk" onclick="PC.execPublish()">确认发布</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 发布成功 -->
+  <div class="pc-modal" id="successModal">
+    <div class="pc-modal-card" role="dialog" aria-modal="true" aria-label="发布成功">
+      <div class="pc-ok-check">✓</div>
+      <div class="pc-ok-art" id="suArt"></div>
+      <div class="pc-ok-title" id="suTitle">—</div>
+      <div class="pc-ok-name" id="suName">—</div>
+      <div class="pc-modal-note" id="suNote">—</div>
+      <div class="pc-ok-addr pc-num" id="suAddr" onclick="PC.copySuAddr()" title="复制地址" style="display:none">—</div>
+      <div class="pc-modal-acts" id="suActions"></div>
+      <div class="pc-ok-links">
+        <a onclick="PC.publishAnother()">再发一次</a>
+        <a href="index.html">回到首页</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 二选一确认（切换内容类型 / 关闭发币） -->
+  <div class="pc-modal" id="askModal">
+    <div class="pc-modal-card" role="dialog" aria-modal="true" aria-label="确认">
+      <div class="pc-modal-title" id="askTitle">确认</div>
+      <div class="pc-modal-note" id="askBody">—</div>
+      <div class="pc-modal-acts">
+        <button class="pc-modal-cancel" id="askCancel">取消</button>
+        <button class="pc-modal-ok" id="askOk" style="background:#0A0B0D">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 视频预览 -->
+  <div class="pc-vprev" id="videoPreviewOverlay">
+    <button class="x" onclick="PC.closeVideoPreview()" aria-label="关闭">✕</button>
+    <div class="box">
+      <video id="previewVideo" controls playsinline></video>
+      <div class="info">
+        <span class="t" id="previewTitle">播放预览</span>
+        <button onclick="PC.closeVideoPreview()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc-toast" id="pcToast"></div>
+
+  <script src="auth.js"></script>
+  <script>if(window.innerWidth<=768&&typeof currentUser!=="undefined"&&currentUser&&!currentUser.isLoggedIn)location.href="mobile-login.html?redirect="+encodeURIComponent("publish-center.html");</script>
+  <script src="launch-coin.js"></script>
+
+  <script>
+  /* ============================================================
+     发布中心 · 主控
+     ============================================================ */
+  var PC = (function () {
+    'use strict';
+
+    var TAGS = ['AI 生成', '热门改编', '原创剧本', '连载中', '已完结', '互动叙事', '多人共创', '影视级'];
+    var VIDEO_MAX = 3 * 1024 * 1024 * 1024;
+    var VIDEO_RE = /\.(mp4|flv|wmv|asf|mkv|avi|rm|rmvb|mpg|mpeg|mov|webm)$/i;
+
+    /* ---------- 状态 ---------- */
+    var S = {
+      prevView: 'center',
+      kind: null,                 // null | 'drama' | 'video'
+      wantCoin: null,             // null | false | true
+
+      drama: {
+        title: '', desc: '', cover: null, tags: [],
+        items: [],                // 队列项
+        status: 'empty',          // 'empty' | 'uploading' | 'ready'
+        episodes: []              // 已确定的剧集（返回发布中心时提交）
+      },
+      video: {
+        src: null,                // {kind:'gallery'|'file', id, name, cover, video, duration}
+        cover: null,              // dataURL
+        desc: '',
+        coverTouched: false,      // 用户是否手动换过封面
+        status: 'empty'           // 'empty' | 'uploading' | 'ready'
+      },
+      coin: {
+        name: '', symbol: '', tagline: '', img: null, imgIsCustom: false, upBusy: false,
+        x: '', tg: '', pair: 'ETH', devBuy: 0,
+        shareToHolders: false, creatorWallet: '', taxPct: 0, snipe: [],
+        status: 'empty'           // 'empty' | 'ready'
+      }
+    };
+
+    /* ---------- 工具 ---------- */
+    function $(id) { return document.getElementById(id); }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function fmtSize(b) {
+      if (!b) return '0 B';
+      var u = ['B', 'KB', 'MB', 'GB'];
+      var i = Math.floor(Math.log(b) / Math.log(1024));
+      return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + u[i];
+    }
+    function fmtDur(s) {
+      if (!s || isNaN(s)) return '';
+      var m = Math.floor(s / 60), x = Math.floor(s % 60);
+      return m + ':' + String(x).padStart(2, '0');
+    }
+    function cpLen(t) { try { return Array.from(t).length; } catch (e) { return t.length; } }
+
+    var toastEl = null, toastTimer = null;
+    function toast(msg) {
+      toastEl = $('pcToast');
+      if (!toastEl) return;
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2400);
+    }
+
+    /* ---------- 视图切换 ---------- */
+    /* 离开子视图时把仍在编辑中的读数同步回内存草稿，
+       这样"返回发布中心"再点进来不会丢字段（未点确定也能续填）。
+       注意：必须按"当前显示的是哪个视图"判断，不能只看 S.kind
+       —— 用户可能在 A 视图里把类型切成了 B。 */
+    function syncBack(from, to) {
+      if (from === to) return;
+      if (from === 'drama') {
+        var t = $('drTitle'), d = $('drDesc');
+        if (t) S.drama.title = t.value.trim();
+        if (d) S.drama.desc = d.value.trim();
+      }
+      if (from === 'video') {
+        var x = $('vdDesc');
+        if (x) S.video.desc = x.value.trim();
+      }
+    }
+
+    function setView(v) {
+      var from = currentView();
+      /* 从代币视图离开时把表单读数收进草稿（不改变 status，只有「确定」才置 ready） */
+      if (from === 'coin') { try { coin.saveDraft(); } catch (e) {} }
+      syncBack(from, v);
+      if (v !== 'center') S.prevView = v;
+      document.body.className = 'pc pc-mode-' + v;
+      window.scrollTo(0, 0);
+      if (v === 'center') renderCenter();
+    }
+    function currentView() {
+      var cls = document.body.className || '';
+      if (cls.indexOf('pc-mode-drama') >= 0) return 'drama';
+      if (cls.indexOf('pc-mode-video') >= 0) return 'video';
+      if (cls.indexOf('pc-mode-coin') >= 0) return 'coin';
+      return 'center';
+    }
+    function backToCenter() { setView('center'); }
+
+    /* ---------- 通用确认弹窗 ---------- */
+    function ask(title, body, onOk, okLabel) {
+      $('askTitle').textContent = title;
+      $('askBody').textContent = body;
+      var ok = $('askOk'), cancel = $('askCancel');
+      ok.textContent = okLabel || '确定';
+      $('askModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      function close() {
+        $('askModal').classList.remove('open');
+        document.body.style.overflow = '';
+        ok.onclick = null; cancel.onclick = null;
+      }
+      ok.onclick = function () { close(); onOk(); };
+      cancel.onclick = close;
+    }
+
+    /* ============================================================
+       发布中心
+       ============================================================ */
+    /* 已选的二选一：始终让两个选项都可见，当前项打勾、另一项仍可点击。
+       否则"选完就藏起来"会让用户只能靠「清除」才能反悔。 */
+    var CHK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+    function chip(label, on, onclick) {
+      return '<button type="button" class="pc-chip' + (on ? ' is-on' : '') +
+        '" aria-pressed="' + (on ? 'true' : 'false') + '" onclick="' + onclick + '">' +
+        '<span class="pc-chip-ico">' + (on ? CHK : ARROW) + '</span>' + esc(label) +
+      '</button>';
+    }
+    function chipRow(html) { return '<div class="pc-chips">' + html + '</div>'; }
+
+    function kindChips() {
+      return chipRow(
+        chip('发短剧', S.kind === 'drama', "PC.pickKind('drama')") +
+        chip('发短视频', S.kind === 'video', "PC.pickKind('video')")
+      );
+    }
+    function coinChips() {
+      return chipRow(
+        chip('发币', S.wantCoin === true, 'PC.pickCoin(true)') +
+        chip('不发币', S.wantCoin === false, 'PC.pickCoin(false)')
+      );
+    }
+
+    function kindHTML() {
+      var icoDrama = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="M2 8h20M8 21V8M12 5.5v2M16 5.5v2"/></svg>';
+      var icoVideo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10,8.5 10,15.5 16,12" fill="currentColor" stroke="none"/></svg>';
+      var go = '<span class="pc-opt-go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+
+      /* 未选：完整卡片，讲清两者区别 */
+      if (!S.kind) {
+        return '<div class="pc-opts">' +
+          '<button class="pc-opt" onclick="PC.pickKind(\'drama\')">' +
+            '<span class="pc-opt-ico">' + icoDrama + '</span>' +
+            '<span class="pc-opt-body">' +
+              '<span class="pc-opt-name">发短剧</span>' +
+              '<span class="pc-opt-sub">多集连载 · 批量上传视频</span>' +
+            '</span>' + go +
+          '</button>' +
+          '<button class="pc-opt" onclick="PC.pickKind(\'video\')">' +
+            '<span class="pc-opt-ico">' + icoVideo + '</span>' +
+            '<span class="pc-opt-body">' +
+              '<span class="pc-opt-name">发短视频</span>' +
+              '<span class="pc-opt-sub">单条作品 · 一条视频</span>' +
+            '</span>' + go +
+          '</button>' +
+        '</div>';
+      }
+
+      /* 已选：紧凑片并列（随时可改）+ 当前状态 */
+      var body;
+      if (S.kind === 'drama') {
+        var d = S.drama;
+        if (d.status === 'ready' && d.episodes.length) {
+          var cover = d.cover
+            ? '<div class="pc-sum-thumb"><img src="' + d.cover + '" alt="" /></div>'
+            : '<div class="pc-sum-thumb">🎬</div>';
+          body = '<div class="pc-sum">' + cover +
+            '<div class="pc-sum-info">' +
+              '<div class="pc-sum-name">' + esc(d.title || '未命名短剧') + '</div>' +
+              '<div class="pc-sum-meta">' +
+                '<span>' + d.episodes.length + ' 集</span>' +
+                '<span>' + (d.tags.length ? esc(d.tags.join(' · ')) : '无标签') + '</span>' +
+                '<span class="pc-sum-ok">✓ 已填写</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="pc-sum-acts">' +
+              '<button class="pc-sum-btn" onclick="PC.editKind()">修改</button>' +
+              '<button class="pc-sum-btn is-ghost" onclick="PC.clearKind()">清除</button>' +
+            '</div></div>';
+        } else {
+          /* 视频传完但没点过「确定」，或压根没动过：都说清缺什么 */
+          var uploaded = d.items.filter(function (f) { return f.status === 'done'; }).length;
+          var lack = [];
+          if (!d.title) lack.push('缺标题');
+          if (!uploaded) lack.push('未上传视频');
+          else lack.push('已上传 ' + uploaded + ' 集待确定');
+          body = '<div class="pc-sum-empty">短剧未完成（' + lack.join(' · ') + '） · ' +
+            '<a onclick="PC.editKind()" style="text-decoration:underline;cursor:pointer">继续填写</a></div>';
+        }
+      } else {
+        var v = S.video;
+        if (v.status === 'ready' && v.src) {
+          var cov = v.cover || v.src.cover;
+          var cHtml = cov
+            ? '<div class="pc-sum-thumb"><img src="' + cov + '" alt="" /></div>'
+            : '<div class="pc-sum-thumb">▶</div>';
+          body = '<div class="pc-sum">' + cHtml +
+            '<div class="pc-sum-info">' +
+              '<div class="pc-sum-name">' + esc(v.src.name) + '</div>' +
+              '<div class="pc-sum-meta">' +
+                (v.src.duration ? '<span>' + fmtDur(v.src.duration) + '</span>' : '') +
+                '<span>' + (v.src.kind === 'gallery' ? '素材库' : '本地上传') + '</span>' +
+                (v.desc ? '<span>' + esc(v.desc) + '</span>' : '<span>无描述</span>') +
+                '<span class="pc-sum-ok">✓ 已填写</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="pc-sum-acts">' +
+              '<button class="pc-sum-btn" onclick="PC.editKind()">修改</button>' +
+              '<button class="pc-sum-btn is-ghost" onclick="PC.clearKind()">清除</button>' +
+            '</div></div>';
+        } else {
+          body = '<div class="pc-sum-empty">短视频未填写完 · ' +
+            '<a onclick="PC.editKind()" style="text-decoration:underline;cursor:pointer">继续填写</a></div>';
+        }
+      }
+      return kindChips() + body;
+    }
+
+    function coinHTML() {
+      var go = '<span class="pc-opt-go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+      var icoNo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/></svg>';
+      var icoYes = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2l2.4 6.2L21 9.3l-5 4.9 1.2 6.8L12 17.8l-5.2 3.2L8 14.2l-5 4.9 6.6-1.1L12 2z"/></svg>';
+
+      /* 未选：完整卡片（初始态）——发币在左、不发币在右 */
+      if (S.wantCoin === null) {
+        return '<div class="pc-opts">' +
+          '<button class="pc-opt" onclick="PC.pickCoin(true)">' +
+            '<span class="pc-opt-ico">' + icoYes + '</span>' +
+            '<span class="pc-opt-body">' +
+              '<span class="pc-opt-name">发币</span>' +
+              '<span class="pc-opt-sub">同时发行代币</span>' +
+            '</span>' + go +
+          '</button>' +
+          '<button class="pc-opt" onclick="PC.pickCoin(false)">' +
+            '<span class="pc-opt-ico">' + icoNo + '</span>' +
+            '<span class="pc-opt-body">' +
+              '<span class="pc-opt-name">不发币</span>' +
+              '<span class="pc-opt-sub">只发布作品</span>' +
+            '</span>' +
+          '</button>' +
+        '</div>';
+      }
+
+      if (S.wantCoin === false) {
+        return coinChips() +
+          '<div class="pc-sum">' +
+            '<div class="pc-sum-thumb" style="border-radius:50%">🚫</div>' +
+            '<div class="pc-sum-info">' +
+              '<div class="pc-sum-name">不发币</div>' +
+              '<div class="pc-sum-meta"><span>本次发布只包含作品</span></div>' +
+            '</div>' +
+          '</div>';
+      }
+
+      /* wantCoin === true */
+      var c = S.coin;
+      if (c.status === 'ready') {
+        var img = c.img
+          ? '<div class="pc-sum-thumb is-coin"><img src="' + c.img + '" alt="" /></div>'
+          : '<div class="pc-sum-thumb is-coin">🪙</div>';
+        var tax = (Number(c.taxPct) || 0);
+        return coinChips() +
+          '<div class="pc-sum">' + img +
+          '<div class="pc-sum-info">' +
+            '<div class="pc-sum-name">' + esc(c.symbol || '—') + ' · ' + esc(c.name || '未命名') + '</div>' +
+            '<div class="pc-sum-meta">' +
+              '<span>配对 <b>' + esc(c.pair) + '</b></span>' +
+              (tax > 0 ? '<span>创作者税 <b>' + tax.toFixed(2) + '%</b></span>' : '') +
+              '<span>发行费 <b>0.0005 ETH</b></span>' +
+              '<span class="pc-sum-ok">✓ 已填写</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="pc-sum-acts">' +
+            '<button class="pc-sum-btn" onclick="PC.editCoin()">修改</button>' +
+            '<button class="pc-sum-btn is-ghost" onclick="PC.clearCoin()">移除</button>' +
+          '</div></div>';
+      }
+
+      return coinChips() +
+        '<div class="pc-sum">' +
+          '<div class="pc-sum-thumb is-coin">✦</div>' +
+          '<div class="pc-sum-info">' +
+            '<div class="pc-sum-name">代币信息待填写</div>' +
+            '<div class="pc-sum-meta"><span>还需要填写币名、代号、币图等</span></div>' +
+          '</div>' +
+          '<div class="pc-sum-acts">' +
+            '<button class="pc-sum-btn" onclick="PC.editCoin()">去填写</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function renderCenter() {
+      $('kindArea').innerHTML = kindHTML();
+      $('coinArea').innerHTML = coinHTML();
+
+      var kindReady = S.kind === 'drama' ? S.drama.status === 'ready'
+                    : S.kind === 'video' ? (S.video.status === 'ready' && !!S.video.src)
+                    : false;
+      var coinReady = S.wantCoin !== true || S.coin.status === 'ready';
+
+      var hint = $('kindHint');
+      if (S.kind === 'drama' && S.drama.status === 'uploading') {
+        hint.textContent = '视频上传中，请稍候…';
+        hint.className = 'pc-step-hint is-warn';
+      } else if (S.kind === 'drama') {
+        hint.textContent = S.drama.status === 'ready' ? '已选择 · 短剧' : '短剧未填写完';
+        hint.className = 'pc-step-hint' + (S.drama.status === 'ready' ? '' : ' is-warn');
+      } else if (S.kind === 'video') {
+        hint.textContent = (S.video.status === 'ready' && S.video.src) ? '已选择 · 短视频' : '短视频未填写完';
+        hint.className = 'pc-step-hint' + ((S.video.status === 'ready' && S.video.src) ? '' : ' is-warn');
+      } else {
+        hint.textContent = '短剧与短视频二选一';
+        hint.className = 'pc-step-hint';
+      }
+
+      var ch = $('coinHint');
+      ch.textContent = S.wantCoin === null ? '选择是否同时发行代币'
+        : S.wantCoin === false ? '不发币'
+        : (S.coin.status === 'ready' ? '发币 · 已填写' : '发币 · 待填写');
+      ch.className = 'pc-step-hint' + (S.wantCoin === true && S.coin.status !== 'ready' ? ' is-warn' : '');
+
+      /* 提交按钮 */
+      var btn = $('submitBtn'), note = $('submitNote');
+      if (!S.kind) {
+        btn.disabled = true; btn.textContent = '发布';
+        note.textContent = '请先选择发布内容'; note.className = 'pc-submit-note is-warn';
+      } else if (!kindReady) {
+        btn.disabled = true; btn.textContent = '发布';
+        note.textContent = S.kind === 'drama' ? '短剧信息未填写完，请点上方卡片继续' : '短视频信息未填写完，请点上方卡片继续';
+        note.className = 'pc-submit-note is-warn';
+      } else if (S.wantCoin === null) {
+        btn.disabled = true; btn.textContent = '发布';
+        note.textContent = '请选择是否发行代币'; note.className = 'pc-submit-note is-warn';
+      } else if (!coinReady) {
+        btn.disabled = true; btn.textContent = '发布';
+        note.textContent = '代币信息未填写完，请点上方卡片继续'; note.className = 'pc-submit-note is-warn';
+      } else {
+        btn.disabled = false; btn.textContent = '发布';
+        note.textContent = S.wantCoin ? '将同时发布作品并发行代币' : '将发布作品';
+        note.className = 'pc-submit-note';
+      }
+    }
+
+    /* ---------- 内容类型选择 ---------- */
+    function pickKind(k) {
+      if (S.kind && S.kind !== k) {
+        var cur = S.kind === 'drama' ? '短剧' : '短视频';
+        var next = k === 'drama' ? '短剧' : '短视频';
+        /* 目标类型已有草稿 → 直接切回，不打扰（数据本来就保留） */
+        var targetHasDraft = k === 'drama'
+          ? (!!S.drama.title || S.drama.episodes.length > 0 || S.drama.status !== 'empty')
+          : (!!S.video.src || S.video.status !== 'empty');
+        if (targetHasDraft) { S.kind = k; openKind(); return; }
+        ask('切换发布内容？', '已填写的' + cur + '草稿会保留，随时可以切回来。确定切换到' + next + '？', function () {
+          S.kind = k;
+          openKind();
+        }, '切换');
+        return;
+      }
+      S.kind = k;
+      openKind();
+    }
+    function openKind() {
+      if (S.kind === 'drama') enterDrama(); else enterVideo();
+    }
+    function editKind() { openKind(); }
+    function clearKind() {
+      var name = S.kind === 'drama' ? '短剧' : '短视频';
+      ask('清除' + name + '草稿？', '已填写的' + name + '信息将被清空，此操作不可撤销。', function () {
+        if (S.kind === 'drama') {
+          S.drama = { title: '', desc: '', cover: null, tags: [], items: [], status: 'empty', episodes: [] };
+        } else {
+          S.video = { src: null, cover: null, desc: '', coverTouched: false, status: 'empty' };
+        }
+        renderCenter();
+        toast(name + '草稿已清除');
+      }, '清除');
+    }
+
+    /* ---------- 发币选择 ---------- */
+    function pickCoin(v) {
+      if (v === false && S.coin.status === 'ready') {
+        ask('关闭发币？', '已填写的代币信息会保留，之后可以改回「发币」并继续编辑。', function () {
+          S.wantCoin = false; renderCenter();
+        }, '关闭');
+        return;
+      }
+      if (v === true) {
+        S.wantCoin = true;
+        if (S.coin.status === 'ready') { renderCenter(); return; }
+        enterCoin();
+        return;
+      }
+      S.wantCoin = false;
+      renderCenter();
+    }
+    function editCoin() {
+      if (!S.kind) {
+        toast('请先在上一步选择发布内容');
+        setView('center');
+        return;
+      }
+      /* 从「修改 / 去填写」进来也要把开关置为发币，
+         否则可能出现"币填好了但②仍是未选"的错位。 */
+      S.wantCoin = true;
+      enterCoin();
+    }
+    function clearCoin() {
+      ask('移除代币信息？', '已填写的代币信息将被清空，此操作不可撤销。', function () {
+        S.coin = freshCoin();
+        S.wantCoin = null;
+        renderCenter();
+        toast('代币信息已移除');
+      }, '移除');
+    }
+    function freshCoin() {
+      return {
+        name: '', symbol: '', tagline: '', img: null, imgIsCustom: false, upBusy: false,
+        x: '', tg: '', pair: 'ETH', devBuy: 0,
+        shareToHolders: false, creatorWallet: '', taxPct: 0, snipe: [],
+        status: 'empty'
+      };
+    }
+
+    /* ============================================================
+       短剧视图
+       ============================================================ */
+    var drama = (function () {
+      var epId = 0;
+
+      function enter() {
+        setView('drama');
+        $('drTitle').value = S.drama.title;
+        $('drDesc').value = S.drama.desc;
+        renderTags();
+        renderCover();
+        goStep(S.drama.items.length ? 2 : 1);
+        renderQueue();
+      }
+
+      function renderTags() {
+        $('drTags').innerHTML = TAGS.map(function (t) {
+          var on = S.drama.tags.indexOf(t) >= 0;
+          return '<span class="pc-tag' + (on ? ' is-on' : '') + '" data-tag="' + esc(t) + '">' + esc(t) + '</span>';
+        }).join('');
+      }
+
+      function renderCover() {
+        var z = $('drCoverZone'), c = S.drama.cover;
+        if (c) {
+          z.classList.add('has-cover');
+          z.innerHTML = '<img src="' + c + '" alt="" />' +
+            '<div class="pc-cover-overlay">✓ 封面已设置 · 点击更换</div>';
+        } else {
+          z.classList.remove('has-cover');
+          z.innerHTML = '<div class="pc-cover-ico">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>' +
+            '<p>点击或拖拽上传封面图<br /><strong>支持 JPG、PNG</strong></p>';
+        }
+      }
+
+      function goStep(n) {
+        $('dramaStep1').style.display = n === 1 ? 'block' : 'none';
+        $('dramaStep2').style.display = n === 2 ? 'block' : 'none';
+        $('dramaBarTitle').textContent = '短剧 · ' + (n === 1 ? '基本信息' : '剧集管理');
+
+        var items = document.querySelectorAll('#dramaSteps .pc-step-item');
+        for (var i = 0; i < items.length; i++) {
+          var idx = i + 1;
+          items[i].className = 'pc-step-item' + (idx < n ? ' is-done' : idx === n ? ' is-active' : '');
+        }
+
+        var acts = $('dramaBarActs');
+        acts.innerHTML = n === 1
+          ? '<button class="pc-btn is-primary" onclick="PC.drama.goStep(2)">下一步</button>'
+          : '<button class="pc-btn" onclick="PC.drama.goStep(1)">上一步</button>' +
+            '<button class="pc-btn is-primary" onclick="PC.confirmDrama()">确定</button>';
+
+        if (n === 2 && S.drama.items.length === 0) renderQueue();
+      }
+
+      /* —— 队列 —— */
+      function renderQueue() {
+        var wrap = $('drQueueWrap'), empty = $('drQueueEmpty'), items = S.drama.items;
+        $('drQueueCount').textContent = items.length + ' 个文件';
+        if (!items.length) {
+          wrap.style.display = 'none';
+          empty.style.display = 'block';
+          return;
+        }
+        wrap.style.display = 'block';
+        empty.style.display = 'none';
+        $('drQueueItems').innerHTML = items.map(itemHTML).join('');
+        updateStats();
+      }
+
+      function itemHTML(it) {
+        var statusText = { waiting: '等待上传', uploading: '上传中', done: '已完成', failed: '失败' };
+        var ext = (it.originalName.split('.').pop() || '').toUpperCase();
+        var thumb = it.thumbUrl
+          ? '<img src="' + it.thumbUrl + '" alt="" /><span class="badge">' + ext + '</span>'
+          : '<span>🎬</span><span class="badge">' + ext + '</span>';
+        var playable = it.status === 'done' && it.url;
+        var bar = it.status === 'uploading'
+          ? '<div class="bar"><i style="width:' + it.progress + '%"></i></div>'
+          : it.status === 'done'
+            ? '<div class="bar"><i class="done" style="width:100%"></i></div>'
+            : it.status === 'failed'
+              ? '<div class="bar"><i class="failed" style="width:100%"></i></div>'
+              : '';
+        var progTxt = it.status === 'uploading'
+          ? '<span>' + fmtSize(it.uploadedBytes || 0) + ' / ' + fmtSize(it.size) + '</span>' : '';
+
+        return '<div class="pc-item" data-ep="' + it.id + '"' +
+          (playable ? ' style="cursor:pointer" onclick="PC.drama.preview(' + it.id + ')"' : '') + '>' +
+          '<span class="ep">' + it.order + '</span>' +
+          '<div class="thumb">' + thumb + (playable ? '<span class="pc-play-badge">▶</span>' : '') + '</div>' +
+          '<div class="info">' +
+            '<span class="fname">' + esc(it.originalName) + '</span>' +
+            '<div class="meta">' +
+              '<span>' + fmtSize(it.size) + '</span>' +
+              (it.duration ? '<span>⏱ ' + fmtDur(it.duration) + '</span>' : '') +
+              progTxt +
+              '<span class="sbadge ' + it.status + '" onclick="event.stopPropagation()">' + statusText[it.status] + '</span>' +
+            '</div>' +
+            bar +
+            '<input class="ep-title" type="text" value="' + esc(it.title || '') + '" placeholder="分集描述（选填）"' +
+              ' onclick="event.stopPropagation()" oninput="PC.drama.setTitle(' + it.id + ', this.value)" />' +
+          '</div>' +
+          '<div class="acts" onclick="event.stopPropagation()">' +
+            (it.status === 'failed' ? '<button class="pc-icon-btn" title="重试" onclick="PC.drama.retry(' + it.id + ')">↻</button>' : '') +
+            '<button class="pc-icon-btn" title="替换视频" onclick="PC.drama.replace(' + it.id + ')">🔄</button>' +
+            '<button class="pc-icon-btn is-danger" title="删除" onclick="PC.drama.remove(' + it.id + ')">✕</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderItem(it) {
+        var el = document.querySelector('[data-ep="' + it.id + '"]');
+        if (el) el.outerHTML = itemHTML(it);
+      }
+      function progressItem(it) {
+        var el = document.querySelector('[data-ep="' + it.id + '"]');
+        if (!el) return;
+        var f = el.querySelector('.bar > i');
+        if (f) f.style.width = it.progress + '%';
+      }
+      function updateStats() {
+        var all = S.drama.items;
+        var done = all.filter(function (f) { return f.status === 'done'; }).length;
+        var failed = all.filter(function (f) { return f.status === 'failed'; }).length;
+        var up = all.filter(function (f) { return f.status === 'uploading'; }).length;
+        var t = '📊 ' + done + '/' + all.length + ' 已完成';
+        if (up) t += ' · ' + up + ' 上传中';
+        if (failed) t += ' · ⚠️ ' + failed + ' 失败';
+        $('drStats').textContent = t;
+      }
+
+      /* —— 加文件 —— */
+      function addFiles(fileList) {
+        var valid = [];
+        for (var i = 0; i < fileList.length; i++) {
+          var f = fileList[i];
+          var isVideo = (f.type && f.type.indexOf('video/') === 0) || VIDEO_RE.test(f.name);
+          if (!isVideo) { toast('「' + f.name + '」不是视频文件，已跳过'); continue; }
+          if (f.size > VIDEO_MAX) { toast('「' + f.name + '」超过 3GB，已跳过'); continue; }
+          valid.push(f);
+        }
+        if (!valid.length) return;
+        valid.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-CN', { numeric: true }); });
+
+        var added = valid.map(function (f) {
+          return {
+            id: ++epId, file: f, name: f.name.replace(/\.[^/.]+$/, ''), originalName: f.name,
+            size: f.size, title: '', order: 0,
+            status: 'waiting', progress: 0, uploadedBytes: 0, url: null, duration: null,
+            thumbUrl: null, committed: false
+          };
+        });
+        S.drama.items = S.drama.items.concat(added);
+        reorder();
+        added.forEach(function (it) { makeThumb(it); });
+        renderQueue();
+        toast('已添加 ' + added.length + ' 个视频文件');
+        uploadAll();
+      }
+
+      function reorder() { S.drama.items.forEach(function (f, i) { f.order = i + 1; }); }
+
+      function makeThumb(it) {
+        var v = document.createElement('video');
+        v.preload = 'metadata'; v.muted = true; v.playsInline = true;
+        var objUrl = URL.createObjectURL(it.file);
+        v.onloadeddata = function () {
+          it.duration = v.duration || null;
+          try {
+            var cv = document.createElement('canvas');
+            cv.width = 160; cv.height = 90;
+            cv.getContext('2d').drawImage(v, 0, 0, 160, 90);
+            it.thumbUrl = cv.toDataURL('image/jpeg', 0.6);
+          } catch (e) {}
+          renderItem(it); updateStats();
+          v.remove(); URL.revokeObjectURL(objUrl);
+        };
+        v.onerror = function () { v.remove(); URL.revokeObjectURL(objUrl); };
+        v.src = objUrl;
+        v.currentTime = 1;
+      }
+
+      /* —— 上传（原型为模拟进度） —— */
+      function uploadOne(it) {
+        if (it.status === 'done' || it.status === 'uploading') return Promise.resolve();
+        it.status = 'uploading'; it.progress = 0; it.uploadedBytes = 0;
+        syncStatus(); renderItem(it);
+        var steps = 20;
+        var chain = Promise.resolve();
+        for (var i = 1; i <= steps; i++) {
+          (function (i) {
+            chain = chain.then(function () {
+              return new Promise(function (r) { setTimeout(r, 60 + Math.random() * 90); });
+            }).then(function () {
+              var pct = Math.min(i / steps, 0.99);
+              it.progress = Math.round(pct * 100);
+              it.uploadedBytes = Math.round(it.size * pct);
+              progressItem(it); updateStats();
+            });
+          })(i);
+        }
+        return chain.then(function () {
+          it.status = 'done'; it.progress = 100; it.uploadedBytes = it.size;
+          it.url = URL.createObjectURL(it.file);
+          it.committed = false;
+          renderItem(it); updateStats(); syncStatus();
+        });
+      }
+
+      function uploadAll() {
+        var pend = S.drama.items.filter(function (f) { return f.status === 'waiting' || f.status === 'failed'; });
+        if (!pend.length) { syncStatus(); return Promise.resolve(); }
+        syncStatus();
+        var chain = Promise.resolve();
+        pend.forEach(function (it) { chain = chain.then(function () { return uploadOne(it); }); });
+        return chain.then(function () {
+          syncStatus();
+          var left = S.drama.items.filter(function (f) { return f.status !== 'done'; }).length;
+          if (!left) toast('视频已全部处理完成');
+        });
+      }
+
+      function syncStatus() {
+        var items = S.drama.items;
+        if (!items.length) { S.drama.status = 'empty'; }
+        else if (items.some(function (f) { return f.status === 'uploading' || f.status === 'waiting'; })) S.drama.status = 'uploading';
+        else if (items.every(function (f) { return f.status === 'done'; })) S.drama.status = 'ready';
+        else S.drama.status = 'empty';
+        updateStats();
+        if (document.body.classList.contains('pc-mode-center')) renderCenter();
+      }
+
+      /* —— 校验 + 提交回发布中心 —— */
+      function validate(silent) {
+        var t = $('drTitle').value.trim();
+        if (!t) { if (!silent) toast('请填写短剧标题'); goStep(1); $('drTitle').focus(); return false; }
+        if (S.drama.status === 'uploading') { if (!silent) toast('视频还在上传中，请稍候'); goStep(2); return false; }
+        if (!S.drama.items.length) { if (!silent) toast('请至少上传一集视频'); goStep(2); return false; }
+        if (!S.drama.items.every(function (f) { return f.status === 'done'; })) {
+          if (!silent) toast('有视频未处理完成，请重试或删除'); goStep(2); return false;
+        }
+        return true;
+      }
+
+      function commit() {
+        S.drama.title = $('drTitle').value.trim();
+        S.drama.desc = $('drDesc').value.trim();
+        S.drama.episodes = S.drama.items.map(function (f) {
+          return {
+            order: f.order, title: f.title || f.name, desc: f.title || '',
+            name: f.name, duration: f.duration, size: f.size, url: f.url
+          };
+        });
+        S.drama.status = 'ready';
+        S.drama.items.forEach(function (f) { f.committed = true; });
+      }
+
+      function confirm() {
+        if (!validate(false)) return;
+        commit();
+        setView('center');
+        toast('短剧信息已确定');
+      }
+
+      /* —— 交互 —— */
+      function bind() {
+        /* 标题 / 简介计数 */
+        $('drTitle').addEventListener('input', function () {
+          $('drTitleCount').textContent = cpLen(this.value);
+        });
+        $('drDesc').addEventListener('input', function () {
+          if (cpLen(this.value) > 500) { this.value = Array.from(this.value).slice(0, 500).join(''); toast('简介最多 500 字'); }
+          $('drDescCount').textContent = cpLen(this.value);
+        });
+
+        /* 封面 */
+        var cz = $('drCoverZone'), ci = $('drCoverInput');
+        cz.addEventListener('click', function () { ci.click(); });
+        ci.addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          this.value = '';
+          if (!f) return;
+          if (!/^image\//.test(f.type)) { toast('请选择图片文件'); return; }
+          var r = new FileReader();
+          r.onload = function (ev) { S.drama.cover = ev.target.result; renderCover(); };
+          r.readAsDataURL(f);
+        });
+
+        /* 标签 */
+        $('drTags').addEventListener('click', function (e) {
+          var el = e.target.closest('.pc-tag');
+          if (!el) return;
+          var tag = el.getAttribute('data-tag');
+          var i = S.drama.tags.indexOf(tag);
+          if (i >= 0) S.drama.tags.splice(i, 1); else S.drama.tags.push(tag);
+          renderTags();
+        });
+
+        /* 上传区 */
+        var dz = $('drDropZone'), vi = $('drVideoInput');
+        dz.addEventListener('click', function (e) { if (e.target.tagName !== 'INPUT') vi.click(); });
+        vi.addEventListener('change', function (e) {
+          if (e.target.files.length) { addFiles(e.target.files); e.target.value = ''; }
+        });
+        dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('is-over'); });
+        dz.addEventListener('dragleave', function () { dz.classList.remove('is-over'); });
+        dz.addEventListener('drop', function (e) {
+          e.preventDefault(); dz.classList.remove('is-over');
+          if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+        });
+        document.addEventListener('dragover', function (e) { e.preventDefault(); });
+        document.addEventListener('drop', function (e) { e.preventDefault(); });
+      }
+
+      /* —— 队列操作 —— */
+      function remove(id) {
+        var it = S.drama.items.filter(function (f) { return f.id === id; })[0];
+        if (!it) return;
+        ask('删除这一集？', '将删除第 ' + it.order + ' 集「' + (it.title || it.name) + '」。', function () {
+          S.drama.items = S.drama.items.filter(function (f) { return f.id !== id; });
+          reorder(); renderQueue(); syncStatus();
+        }, '删除');
+      }
+      function setTitle(id, v) {
+        var it = S.drama.items.filter(function (f) { return f.id === id; })[0];
+        if (it) it.title = v;
+      }
+      function retry(id) {
+        var it = S.drama.items.filter(function (f) { return f.id === id; })[0];
+        if (it && it.status === 'failed') { it.progress = 0; uploadOne(it); }
+      }
+      function replace(id) {
+        var inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'video/mp4,video/quicktime,video/x-msvideo,video/*';
+        inp.style.display = 'none';
+        inp.addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          var ok = (f.type && f.type.indexOf('video/') === 0) || VIDEO_RE.test(f.name);
+          if (!ok) { toast('「' + f.name + '」不是视频文件'); return; }
+          if (f.size > VIDEO_MAX) { toast('「' + f.name + '」超过 3GB'); return; }
+          var it = S.drama.items.filter(function (x) { return x.id === id; })[0];
+          if (!it) return;
+          it.file = f; it.name = f.name.replace(/\.[^/.]+$/, ''); it.originalName = f.name;
+          it.size = f.size; it.status = 'waiting'; it.progress = 0; it.url = null;
+          it.thumbUrl = null; it.duration = null;
+          makeThumb(it); renderQueue(); uploadAll();
+          toast('已替换为「' + f.name + '」');
+        });
+        document.body.appendChild(inp);
+        inp.click();
+        setTimeout(function () { inp.remove(); }, 1500);
+      }
+      function preview(id) {
+        var it = S.drama.items.filter(function (f) { return f.id === id; })[0];
+        if (!it || !it.url) { toast('视频尚未准备好'); return; }
+        $('previewTitle').textContent = '第 ' + it.order + ' 集：' + (it.title || it.name);
+        $('previewVideo').src = it.url;
+        $('videoPreviewOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      return {
+        enter: enter, bind: bind, goStep: goStep, renderQueue: renderQueue,
+        remove: remove, setTitle: setTitle, retry: retry, replace: replace,
+        preview: preview, validate: validate, commit: commit, confirm: confirm,
+        syncStatus: syncStatus
+      };
+    })();
+
+    function enterDrama() { drama.enter(); }
+    function confirmDrama() { drama.confirm(); }
+
+    /* ============================================================
+       短视频视图
+       ============================================================ */
+    var GALLERY = [
+      { id: 1, name: '丞相府今日开饭', cover: 'image/chengxiangfu_cover.jpg', duration: 32, video: 'video/丞相府今日开饭.mp4' },
+      { id: 2, name: '打斗精彩片段', cover: 'image/chengxiangfu_cover.jpg', duration: 75, video: 'video/打斗视频.mp4' },
+      { id: 3, name: '凤骨琉璃 EP01', cover: 'image/fenggu_cover.jpg', duration: 58, video: 'video/凤骨琉璃.mp4' },
+      { id: 4, name: '我卸甲后天下大乱了', cover: 'image/xiejia_cover.jpg', duration: 121, video: 'video/我卸甲后天下大乱了.mp4' },
+      { id: 5, name: '凤骨琉璃 EP02', cover: 'image/fenggu_cover.jpg', duration: 45, video: 'video/凤骨琉璃.mp4' },
+      { id: 6, name: '长安如梦 EP01', cover: 'image/cover-candle.jpg', duration: 90, video: '' },
+      { id: 7, name: '长安如梦 EP02', cover: 'image/cover-survivor.jpg', duration: 82, video: '' },
+      { id: 8, name: '零夜序章', cover: 'image/cover-zero-night.jpg', duration: 55, video: '' },
+      { id: 9, name: '金字塔探险', cover: 'image/cover-pyramid.jpg', duration: 68, video: '' },
+      { id: 10, name: '全押时刻', cover: 'image/cover-allin.jpg', duration: 192, video: '' },
+      { id: 11, name: '名字的故事', cover: 'image/cover-names.jpg', duration: 48, video: '' },
+      { id: 12, name: '暗流涌动', cover: 'image/cover-candle.jpg', duration: 100, video: '' }
+    ];
+
+    var video = (function () {
+      var fileObjUrl = null;
+
+      function enter() {
+        setView('video');
+        renderGallery();
+        renderSel();
+        $('vdDesc').value = S.video.desc;
+        $('vdDescCount').textContent = cpLen(S.video.desc);
+      }
+
+      function renderGallery() {
+        $('galCount').textContent = GALLERY.length;
+        $('videoGrid').innerHTML = GALLERY.map(function (v) {
+          var on = S.video.src && S.video.src.kind === 'gallery' && S.video.src.id === v.id;
+          return '<div class="pc-grid-item' + (on ? ' is-on' : '') + '" data-gid="' + v.id + '">' +
+            '<img src="' + v.cover + '" alt="" onerror="this.style.display=\'none\'" />' +
+            '<span class="dur">' + fmtDur(v.duration) + '</span>' +
+            '<div class="pick" onclick="event.stopPropagation();PC.video.pickGallery(' + v.id + ')">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '</div>' +
+            '<div onclick="PC.video.pickGallery(' + v.id + ')" style="position:absolute;inset:0;z-index:1"></div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderSel() {
+        var s = S.video.src;
+        var card = $('videoSelCard'), panel = $('videoMetaPanel'), deskArea = $('videoDeskArea');
+        /* 内联 display 会盖过媒体查询，所以要按当前视口自己判断该显示哪个分支 */
+        var isDesk = window.innerWidth > 768;
+        if (!s) {
+          card.style.display = 'none';
+          panel.style.display = 'none';
+          deskArea.style.display = isDesk ? 'block' : 'none';
+          $('videoBarTitle').textContent = '短视频 · 选择视频';
+          $('videoBarActs').innerHTML = '';
+          var pv = $('vdPreview'); pv.removeAttribute('src'); pv.load();
+          return;
+        }
+        card.style.display = 'flex';
+        panel.style.display = 'block';
+        deskArea.style.display = 'none';
+        $('videoBarTitle').textContent = '短视频 · 作品信息';
+        $('videoBarActs').innerHTML = '<button class="pc-btn is-primary" onclick="PC.confirmVideo()">确定</button>';
+
+        $('vdSelName').textContent = s.name;
+        $('vdSelDur').textContent = s.duration ? '时长 ' + fmtDur(s.duration) : '';
+        $('vdSelSize').textContent = s.size ? fmtSize(s.size) : '';
+        $('vdSelState').innerHTML = S.video.status === 'uploading'
+          ? '<span style="color:#B45309;font-weight:600">上传中…</span>'
+          : '<span style="color:#0E9F6E;font-weight:600">✓ 已就绪</span>';
+
+        var pv = $('vdPreview');
+        var real = s.kind === 'file' ? fileObjUrl : (s.video || '');
+        if (real) {
+          pv.src = real;
+          pv.onloadedmetadata = function () { if (!s.duration && pv.duration) { s.duration = pv.duration; $('vdSelDur').textContent = '时长 ' + fmtDur(pv.duration); } };
+        } else {
+          pv.removeAttribute('src');
+        }
+        renderCover();
+      }
+
+      function renderCover() {
+        var c = S.video.cover || (S.video.src ? S.video.src.cover : null);
+        if (c) {
+          $('vdCoverThumb').src = c; $('vdCoverThumb').style.display = 'block';
+          $('vdCoverPh').style.display = 'none';
+        } else {
+          $('vdCoverThumb').style.display = 'none';
+          $('vdCoverPh').style.display = 'grid';
+        }
+      }
+
+      function pickGallery(id) {
+        var v = GALLERY.filter(function (x) { return x.id === id; })[0];
+        if (!v) return;
+        S.video.src = {
+          kind: 'gallery', id: v.id, name: v.name,
+          cover: v.cover, video: v.video, duration: v.duration, size: 0
+        };
+        S.video.coverTouched = false;
+        S.video.cover = null;
+        renderGallery();
+        /* 模拟处理进度 */
+        S.video.status = 'uploading';
+        renderSel();
+        setTimeout(function () {
+          S.video.status = 'ready';
+          if (document.body.classList.contains('pc-mode-video')) renderSel();
+        }, 500);
+      }
+
+      function pickFile(file) {
+        var okType = ['video/mp4', 'video/mov', 'video/webm', 'video/quicktime'].indexOf(file.type) >= 0 ||
+          /\.(mp4|mov|webm)$/i.test(file.name);
+        if (!okType) { toast('请选择 MP4、MOV 或 WebM 格式的视频'); return; }
+        if (fileObjUrl) URL.revokeObjectURL(fileObjUrl);
+        fileObjUrl = URL.createObjectURL(file);
+        S.video.src = {
+          kind: 'file', id: null, name: file.name, cover: null,
+          video: null, duration: 0, size: file.size, file: file
+        };
+        S.video.cover = null; S.video.coverTouched = false;
+        S.video.status = 'uploading';
+        renderGallery();
+        renderSel();
+        setTimeout(function () {
+          S.video.status = 'ready';
+          if (document.body.classList.contains('pc-mode-video')) renderSel();
+        }, 600);
+      }
+
+      function reset() {
+        if (fileObjUrl) { URL.revokeObjectURL(fileObjUrl); fileObjUrl = null; }
+        S.video.src = null; S.video.cover = null; S.video.coverTouched = false;
+        S.video.desc = ''; S.video.status = 'empty';
+        $('vdDesc').value = '';
+        $('vdDescCount').textContent = '0';
+        renderGallery(); renderSel();
+      }
+
+      function pickCover() { $('vdCoverInput').click(); }
+
+      function preview() {
+        var s = S.video.src;
+        if (!s) { toast('请先选择视频'); return; }
+        var real = s.kind === 'file' ? fileObjUrl : (s.video || '');
+        if (!real) { toast('该素材没有可播放的视频文件'); return; }
+        $('previewTitle').textContent = s.name;
+        $('previewVideo').src = real;
+        $('videoPreviewOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function validate(silent) {
+        if (!S.video.src) { if (!silent) toast('请先选择一条视频'); return false; }
+        if (S.video.status === 'uploading') { if (!silent) toast('视频还在处理中，请稍候'); return false; }
+        return true;
+      }
+
+      function confirm() {
+        /* S.video.status 可能因草稿切回而残留 'ready'，必须重新确认真的有视频 */
+        if (!validate(false)) return;
+        S.video.desc = $('vdDesc').value.trim();
+        S.video.status = 'ready';
+        setView('center');
+        toast('短视频信息已确定');
+      }
+
+      function bind() {
+        /* 桌面端上传 */
+        var dz = $('vdDropZone'), fi = $('vdFileInput');
+        dz.addEventListener('click', function (e) { if (e.target.tagName !== 'INPUT') fi.click(); });
+        fi.addEventListener('change', function (e) {
+          if (e.target.files.length) { pickFile(e.target.files[0]); e.target.value = ''; }
+        });
+        dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('is-over'); });
+        dz.addEventListener('dragleave', function () { dz.classList.remove('is-over'); });
+        dz.addEventListener('drop', function (e) {
+          e.preventDefault(); dz.classList.remove('is-over');
+          if (e.dataTransfer.files.length) pickFile(e.dataTransfer.files[0]);
+        });
+
+        /* 封面 */
+        $('vdCoverInput').addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          this.value = '';
+          if (!f) return;
+          if (!/^image\//.test(f.type)) { toast('请选择图片文件'); return; }
+          var r = new FileReader();
+          r.onload = function (ev) {
+            S.video.cover = ev.target.result; S.video.coverTouched = true; renderCover();
+          };
+          r.readAsDataURL(f);
+        });
+
+        /* 描述 */
+        $('vdDesc').addEventListener('input', function () {
+          if (cpLen(this.value) > 100) { this.value = Array.from(this.value).slice(0, 100).join(''); toast('最多输入 100 字'); }
+          $('vdDescCount').textContent = cpLen(this.value);
+        });
+      }
+
+      function currentSrc() {
+        var s = S.video.src;
+        if (!s) return null;
+        return {
+          kind: s.kind,
+          name: s.name,
+          duration: s.duration || 0,
+          size: s.size || 0,
+          cover: S.video.cover || s.cover || '',
+          /* 文件源的 objectURL 在 IIFE 内，这里统一解析出来供发布使用 */
+          videoSrc: s.kind === 'file' ? (fileObjUrl || '') : (s.video || '')
+        };
+      }
+
+      return {
+        enter: enter, bind: bind, pickGallery: pickGallery, pickFile: pickFile,
+        reset: reset, pickCover: pickCover, preview: preview,
+        validate: validate, confirm: confirm, currentSrc: currentSrc
+      };
+    })();
+
+    function enterVideo() { video.enter(); }
+    function confirmVideo() { video.confirm(); }
+
+    /* ============================================================
+       代币视图
+       ============================================================ */
+    var coin = (function () {
+      var pairSel = 'ETH';
+      var snipeList = [];
+      var uploadPreview = null;
+
+      function enter() {
+        setView('coin');
+        loadDraft();
+        renderAttach();
+        buildPairs();
+        renderPairMenu();
+        renderPairTrigger();
+        snipeList = S.coin.snipe.slice();
+        snipeRender();
+        setHfs(S.coin.shareToHolders);
+        taxNoteLive();
+        syncAll();
+        updGas();
+        startGradRead(pairSel);
+      }
+
+      /* —— 从作品推导默认值 —— */
+      function derivedCover() {
+        if (S.kind === 'drama') return S.drama.cover || null;
+        if (S.kind === 'video') return S.video.cover || (S.video.src && S.video.src.cover) || null;
+        return null;
+      }
+      function derivedVideo() {
+        if (S.kind === 'video') {
+          var cur = video.currentSrc();
+          return cur ? (cur.videoSrc || '') : '';
+        }
+        if (S.kind === 'drama' && S.drama.episodes.length) return S.drama.episodes[0].url || '';
+        return '';
+      }
+
+      function attachName() {
+        if (S.kind === 'drama') return S.drama.title || '未命名短剧';
+        if (S.kind === 'video' && S.video.src) return S.video.src.name;
+        return '';
+      }
+      function attachMeta() {
+        if (S.kind === 'drama') {
+          return '短剧 · ' + S.drama.episodes.length + ' 集' + (S.drama.tags.length ? ' · ' + S.drama.tags.join(' · ') : '');
+        }
+        if (S.kind === 'video' && S.video.src) {
+          var s = S.video.src;
+          return '短视频 · ' + (s.kind === 'gallery' ? '素材库' : '本地上传') + (s.duration ? ' · ' + fmtDur(s.duration) : '');
+        }
+        return '';
+      }
+      function attachDesc() {
+        if (S.kind === 'drama') return S.drama.desc;
+        if (S.kind === 'video') return S.video.desc;
+        return '';
+      }
+
+      function renderAttach() {
+        var host = $('coinAttach');
+        if (!S.kind) {
+          host.innerHTML = '<div class="pc-attach">' +
+            '<span class="pc-attach-ico">⚠️</span>' +
+            '<div class="pc-attach-info">' +
+              '<div class="pc-attach-name">还没有发布内容</div>' +
+              '<div class="pc-attach-meta">返回发布中心选择短剧或短视频，代币会自动关联到它</div>' +
+            '</div></div>';
+          return;
+        }
+        var cover = derivedCover();
+        var thumb = cover
+          ? '<div class="pc-attach-thumb"><img src="' + cover + '" alt="" /></div>'
+          : '<span class="pc-attach-ico">' + (S.kind === 'drama' ? '🎬' : '▶') + '</span>';
+        host.innerHTML = '<div class="pc-attach">' + thumb +
+          '<div class="pc-attach-info">' +
+            '<div class="pc-attach-name">' + esc(attachName()) + '</div>' +
+            '<div class="pc-attach-meta">' + esc(attachMeta()) + '</div>' +
+          '</div>' +
+          '<span class="pc-attach-lock">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>' +
+            '已关联</span>' +
+        '</div>';
+      }
+
+      /* —— 草稿读写 —— */
+      function loadDraft() {
+        var c = S.coin;
+        $('pName').value = c.name || '';
+        $('pSymbol').value = c.symbol || '';
+        $('pTag').value = c.tagline || '';
+        $('pX').value = c.x || '';
+        $('pTg').value = c.tg || '';
+        $('pDevBuy').value = c.devBuy || 0;
+        pairSel = c.pair || 'ETH';
+        $('pCreatorWallet').value = c.creatorWallet || '';
+        $('pTaxPct').value = (c.taxPct || 0);
+        snipeList = (c.snipe || []).slice();
+
+        /* 币图：优先用户自选，否则回落到作品封面 */
+        uploadPreview = (c.imgIsCustom && c.img) ? c.img : null;
+        S.coin.upBusy = false;
+        refreshUpBox();
+      }
+      function saveDraft() {
+        var c = S.coin;
+        c.name = $('pName').value.trim();
+        c.symbol = $('pSymbol').value.trim().toUpperCase();
+        c.tagline = $('pTag').value.trim();
+        c.x = $('pX').value.trim();
+        c.tg = $('pTg').value.trim();
+        c.devBuy = parseFloat($('pDevBuy').value) || 0;
+        c.pair = pairSel;
+        c.creatorWallet = $('pCreatorWallet').value.trim();
+        c.taxPct = taxPct();
+        c.shareToHolders = $('shareToHolders').checked;
+        c.snipe = snipeList.slice();
+        c.img = uploadPreview;
+      }
+
+      /* —— 币图 —— */
+      function effectiveImg() {
+        return uploadPreview || derivedCover() || null;
+      }
+      function refreshUpBox() {
+        var img = effectiveImg();
+        var im = $('upImg'), plus = $('upPlus');
+        if (S.coin.upBusy) {
+          plus.style.display = 'block'; plus.textContent = '⏳';
+          im.style.display = 'none';
+          $('upCopy').textContent = '上传中…';
+          $('upNote').textContent = '';
+          return;
+        }
+        plus.textContent = '＋';
+        if (img) {
+          im.src = img; im.style.display = 'block'; plus.style.display = 'none';
+          $('upCopy').textContent = S.coin.imgIsCustom ? '更换图片' : '选择图片';
+          $('upNote').textContent = S.coin.imgIsCustom ? '已使用自选币图' : '当前使用作品封面';
+        } else {
+          im.style.display = 'none'; plus.style.display = 'block';
+          $('upCopy').textContent = '选择图片';
+          $('upNote').textContent = '未选择时使用作品封面';
+        }
+      }
+      function beginCoverUpload() {
+        S.coin.upBusy = true; refreshUpBox();
+        setTimeout(function () {
+          S.coin.upBusy = false;
+          $('upCopy').textContent = '图片已就绪';
+          refreshUpBox();
+        }, 700);
+      }
+      function bindUpload() {
+        $('upFile').addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          this.value = '';
+          if (!f) return;
+          if (!/^image\//.test(f.type)) { toast('请选择图片文件'); return; }
+          var r = new FileReader();
+          r.onload = function (ev) {
+            uploadPreview = ev.target.result;
+            S.coin.img = uploadPreview;
+            S.coin.imgIsCustom = true;
+            beginCoverUpload();
+            syncAll();
+          };
+          r.readAsDataURL(f);
+        });
+      }
+
+      /* —— 同步预览 —— */
+      function syncAll() {
+        var name = $('pName').value.trim();
+        var sym = $('pSymbol').value.trim().toUpperCase();
+        $('sumName').textContent = name || '新代币';
+        $('sumSym').textContent = sym ? '$' + sym : '$TICKER';
+        var img = effectiveImg();
+        if (img) { $('pvImg').src = img; $('pvImg').style.display = 'block'; $('pvPh').style.display = 'none'; }
+        else { $('pvImg').style.display = 'none'; $('pvPh').style.display = 'block'; }
+        $('sumPair').textContent = pairName(pairSel);
+        updTradeFee();
+        var symErr = $('symErr');
+        if (sym && !/^[A-Z0-9]{2,20}$/.test(sym)) {
+          symErr.textContent = '代号需 2–20 位字母或数字'; symErr.style.display = 'block';
+        } else symErr.style.display = 'none';
+        refreshUpBox();
+      }
+
+      /* —— 配对资产（主资产 ETH + quote 加密 + 通证化股票） —— */
+      function buildPairs() {
+        var Lx = window.Launch || {};
+        var arr = ['ETH'];
+        (Lx.quoteCrypto || []).forEach(function (p) { if (arr.indexOf(p) < 0) arr.push(p); });
+        (Lx.pairStocks || []).forEach(function (p) { if (arr.indexOf(p) < 0) arr.push(p); });
+        PAIRS = arr;
+        if (PAIRS.indexOf(pairSel) < 0) pairSel = 'ETH';
+      }
+      var PAIRS = ['ETH', 'WETH', 'USDG', 'cbBTC'];
+      function pairName(p) { return (window.Launch && Launch.assetName) ? Launch.assetName(p) : p; }
+      function pairIcoTxt(p) {
+        if (p === 'ETH' || p === 'WETH') return 'Ξ';
+        if (p === 'cbBTC') return '₿';
+        if (p === 'USDG') return '$';
+        return String(p).charAt(0);
+      }
+      function pairIcoCls(p) { return (p === 'ETH' || p === 'WETH') ? 'eth' : 'stk'; }
+      function pairOptionHTML(p) {
+        return '<button type="button" class="pc-dd-option' + (p === pairSel ? ' active' : '') +
+          '" onclick="PC.coin.pickPair(\'' + p + '\')">' +
+          '<span class="pc-dd-ico ' + pairIcoCls(p) + '">' + pairIcoTxt(p) + '</span>' +
+          '<span class="pc-dd-opt">' + p + '</span>' +
+          '<span class="pc-dd-name">' + esc(pairName(p)) + '</span>' +
+        '</button>';
+      }
+      function renderPairMenu() {
+        var crypto = PAIRS.filter(function (p) { return p !== 'ETH' && p !== 'NONE'; });
+        var stocks = (window.Launch && Launch.pairStocks) ? Launch.pairStocks : [];
+        var cryptoOnly = crypto.filter(function (p) { return stocks.indexOf(p) < 0; });
+        var html = '<div class="pc-dd-group">主资产</div>' + pairOptionHTML('ETH');
+        if (cryptoOnly.length) {
+          html += '<div class="pc-dd-group">加密资产</div>' + cryptoOnly.map(pairOptionHTML).join('');
+        }
+        if (stocks.length) {
+          html += '<div class="pc-dd-group">股票代币</div>' + stocks.map(pairOptionHTML).join('');
+        }
+        $('pairScroll').innerHTML = html;
+      }
+      function renderPairTrigger() {
+        $('pairCur').textContent = pairSel;
+        var ico = $('pairIco');
+        ico.textContent = pairIcoTxt(pairSel);
+        ico.className = 'pc-dd-ico ' + pairIcoCls(pairSel);
+        $('devBuyTok').textContent = pairSel;
+        $('faucetSym').textContent = pairSel;
+        $('duePair').textContent = pairSel;
+        renderDevBuy();
+        updGas();
+      }
+      function openPair() {
+        $('pairMenu').style.display = 'block';
+        $('pairTrigger').setAttribute('aria-expanded', 'true');
+      }
+      function closePair() {
+        $('pairMenu').style.display = 'none';
+        $('pairTrigger').setAttribute('aria-expanded', 'false');
+      }
+      function togglePair() { $('pairMenu').style.display === 'block' ? closePair() : openPair(); }
+      function pickPair(p) { pairSel = p; closePair(); renderPairMenu(); renderPairTrigger(); syncAll(); startGradRead(p); }
+
+      /* —— 毕业阈值（USD 阈值 ÷ 资产价，与 launch-coin.js 的曲线规则一致） —— */
+      function gradQty(sym) {
+        var Lx = window.Launch;
+        if (!Lx || !Lx.assetPrice) return null;
+        var px = Lx.assetPrice(sym);
+        var g = (Lx.CONFIG && Lx.CONFIG.gradThresholdUsd) || 13440;
+        return px ? g / px : null;
+      }
+      function fmtQty(v) {
+        if (window.Launch && Launch.fmtQty) return Launch.fmtQty(v);
+        if (v == null || !isFinite(v)) return '—';
+        var s = v >= 100 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(4);
+        return s.replace(/\.?0+$/, '');
+      }
+      var gradTimer = null;
+      function startGradRead(sym) {
+        if (gradTimer) clearTimeout(gradTimer);
+        var note = $('pairNote'), row = $('sumGrad');
+        note.textContent = '正在读取毕业阈值…';
+        if (row) row.textContent = '—';
+        gradTimer = setTimeout(function () {
+          var q = gradQty(sym);
+          if (q == null) { note.textContent = '毕业阈值读取失败。'; return; }
+          var txt = fmtQty(q) + ' ' + sym;
+          note.textContent = '曲线募满 ' + txt + ' 后自动毕业。';
+          if (row) row.textContent = txt;
+        }, 900);
+      }
+
+      /* —— 开发者预买 —— */
+      function assetBalance(sym) {
+        if (window.Launch && Launch.USER && Launch.USER.balances) return Launch.USER.balances[sym] || 0;
+        return 0;
+      }
+      function renderDevBuy() {
+        var bal = assetBalance(pairSel);
+        $('devBuyBal').textContent = '余额 ' + fmtQty(bal) + ' ' + pairSel;
+        $('devBuyMax').style.display = bal > 0 ? 'inline-block' : 'none';
+      }
+      function devBuyMax() {
+        var bal = assetBalance(pairSel);
+        /* 必须向下取整：字符串截断会得到比余额更大的数（0.91428571→'0.9142'），
+           随后 createCoin/validate 的余额校验会判定"预买超出余额"而失败。 */
+        var q = Math.floor(bal * 10000) / 10000;
+        if (!isFinite(q) || q < 0) q = 0;
+        $('pDevBuy').value = String(q);
+        renderDevBuy();
+        updGas();
+      }
+      function faucetTap() {
+        var Lx = window.Launch;
+        if (!Lx || !Lx.faucet) { toast('演示钱包不可用'); return; }
+        var amt = Lx.faucet(pairSel);
+        renderDevBuy(); updGas();
+        toast('已领取 $250 等值 ' + fmtQty(amt) + ' ' + pairSel);
+      }
+
+      /* —— 高级设置 —— */
+      function toggleAdv() { $('advToggle').classList.toggle('closed'); }
+      function setHfs(v) {
+        $('shareToHolders').checked = !!v;
+        $('hfsHolders').classList.toggle('on', !!v);
+        $('hfsWallet').classList.toggle('on', !v);
+        $('hfsHolders').setAttribute('aria-pressed', String(!!v));
+        $('hfsWallet').setAttribute('aria-pressed', String(!v));
+        updTradeFee();
+      }
+      function clampTax() {
+        var el = $('pTaxPct');
+        var v = parseFloat(el.value);
+        if (isNaN(v)) v = 0;
+        if (v < 0) v = 0;
+        if (v > 10) { v = 10; toast('创作者税最高 10%'); }
+        el.value = String(Math.round(v * 100) / 100);
+        taxNoteLive();
+      }
+      function taxPct() { return parseFloat($('pTaxPct').value) || 0; }
+      function taxNoteLive() {
+        var t = taxPct();
+        $('taxNote').textContent = '交易者合计支付 ' + (1 + t).toFixed(2) + '%（含基础费 1% 与创作者税 ' + t.toFixed(2) + '%）';
+        updTradeFee();
+      }
+      function updTradeFee() {
+        var t = taxPct();
+        $('sumFee').textContent = (1 + t).toFixed(2) + '%';
+      }
+
+      /* —— 狙击税豁免 —— */
+      function snipeAddrShort(a) { return a && a.length > 14 ? a.slice(0, 6) + '…' + a.slice(-4) : (a || ''); }
+      function snipeRender() {
+        $('snipeList').innerHTML = snipeList.map(function (a) {
+          return '<span class="pc-snipe-chip">' + snipeAddrShort(a) +
+            '<button type="button" onclick="PC.coin.snipeRemove(\'' + a + '\')" aria-label="移除">✕</button></span>';
+        }).join('');
+      }
+      function snipeNoteSet(msg, isErr) {
+        var el = $('snipeNote');
+        if (msg) { el.textContent = msg; el.classList.toggle('is-err', !!isErr); }
+        else {
+          el.textContent = '发射首秒内的买入收 99% 狙击税，3 秒内衰减至 0。请声明你团队开局使用的钱包。';
+          el.classList.remove('is-err');
+        }
+      }
+      function snipeAdd() {
+        var v = $('snipeInput').value.trim();
+        if (!/^0x[a-fA-F0-9]{40}$/.test(v)) { snipeNoteSet('请输入完整的 0x 钱包地址（40 位十六进制）', true); return; }
+        if (snipeList.indexOf(v) >= 0) { snipeNoteSet('该地址已在名单中', true); return; }
+        if (snipeList.length >= 10) { snipeNoteSet('最多添加 10 个豁免钱包', true); return; }
+        snipeList.push(v);
+        $('snipeInput').value = '';
+        $('snipeAddBtn').disabled = true;
+        snipeNoteSet('', false);
+        snipeRender();
+      }
+      function snipeRemove(a) { snipeList = snipeList.filter(function (x) { return x !== a; }); snipeRender(); }
+
+      /* —— 燃气估算 —— */
+      function gasEthUsd(v) {
+        if (window.Launch && Launch.ethToUsd) return Launch.ethToUsd(v);
+        return v;
+      }
+      function fmtSmallEth(v) { return (Math.round(v * 1e6) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''); }
+      function updGas() {
+        var db = parseFloat($('pDevBuy').value) || 0;
+        var base = 0.0011;
+        var est = base + Math.max(0, db) * 0.0006;
+        var ethTxt = fmtSmallEth(est);
+        var usd = gasEthUsd(est);
+        $('gasEst').textContent = '⛽ 网络费预估 ' + ethTxt + ' ETH' + (window.Launch && Launch.fmtUsd ? ' (≈' + Launch.fmtUsd(usd) + ')' : '');
+      }
+
+      /* —— 校验 —— */
+      function validate(silent) {
+        var name = $('pName').value.trim();
+        var sym = $('pSymbol').value.trim().toUpperCase();
+        var tag = $('pTag').value.trim();
+        var err = $('createErr');
+        err.classList.remove('show');
+        function bad(msg) { if (!silent) { err.textContent = msg; err.classList.add('show'); } return false; }
+        if (!name) return bad('请输入名称');
+        if (cpLen(name) > 60) return bad('名称最多 60 字');
+        if (tag && cpLen(tag) > 250) return bad('简介最多 250 字');
+        if (!/^[A-Z0-9]{2,20}$/.test(sym)) return bad('代号需 2–20 位字母或数字');
+        var xv = $('pX').value.trim(), tgv = $('pTg').value.trim();
+        if (xv && !/^[A-Za-z0-9]{1,15}$/.test(xv)) return bad('X handle 需 1–15 位字母或数字（不带 @）');
+        if (tgv && !/^[A-Za-z0-9]{1,32}$/.test(tgv)) return bad('Telegram handle 需 1–32 位字母或数字');
+        if ((Launch.coins || []).some(function (c) { return c.symbol === sym; })) return bad('代号已被使用');
+        var dbQty = parseFloat($('pDevBuy').value) || 0;
+        var dbBal = assetBalance(pairSel);
+        if (dbQty > 0 && dbQty > dbBal) {
+          return bad('开发者预买余额不足：当前 ' + fmtQty(dbBal) + ' ' + pairSel + '（可点「领取」补足演示余额）');
+        }
+        if (!effectiveImg()) return bad('请上传币图，或先在上一步填写作品封面');
+        var w = $('pCreatorWallet').value.trim();
+        if (w && !/^0x[a-fA-F0-9]{40}$/.test(w)) return bad('创作者钱包需为完整的 0x 地址');
+        return true;
+      }
+
+      function bind() {
+        bindUpload();
+        $('pDevBuy').addEventListener('input', function () {
+          updGas();
+        });
+        $('pName').addEventListener('input', function () { $('createErr').classList.remove('show'); syncAll(); });
+        $('pSymbol').addEventListener('input', function () {
+          $('createErr').classList.remove('show'); syncAll();
+        });
+        $('pTag').addEventListener('input', function () {
+          $('createErr').classList.remove('show');
+          if (cpLen(this.value) > 250) this.value = Array.from(this.value).slice(0, 250).join('');
+        });
+        $('pTaxPct').addEventListener('blur', clampTax);
+        $('pTaxPct').addEventListener('change', clampTax);
+        $('snipeInput').addEventListener('input', function () {
+          $('snipeAddBtn').disabled = !this.value.trim();
+          snipeNoteSet('', false);
+        });
+        $('snipeInput').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); snipeAdd(); }
+        });
+        $('pairTrigger').addEventListener('click', togglePair);
+        document.addEventListener('mousedown', function (e) {
+          var dd = $('pairDD');
+          if (dd && !dd.contains(e.target)) closePair();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && $('pairMenu').style.display === 'block') closePair();
+        });
+      }
+
+      return {
+        enter: enter, bind: bind, validate: validate, saveDraft: saveDraft,
+        setHfs: setHfs, toggleAdv: toggleAdv, taxNoteLive: taxNoteLive, clampTax: clampTax,
+        pickPair: pickPair, devBuyMax: devBuyMax, faucetTap: faucetTap,
+        snipeAdd: snipeAdd, snipeRemove: snipeRemove,
+        effectiveImg: effectiveImg, refreshUpBox: refreshUpBox, renderAttach: renderAttach,
+        derivedCover: derivedCover, derivedVideo: derivedVideo,
+        attachName: attachName, attachMeta: attachMeta, attachDesc: attachDesc,
+        getPair: function () { return pairSel; },
+        getSnipe: function () { return snipeList.slice(); },
+        isCustomImg: function () { return S.coin.imgIsCustom; },
+        pairName: pairName
+      };
+    })();
+
+    function enterCoin() {
+      if (!S.kind) {
+        toast('请先在发布中心选择短剧或短视频');
+        setView('center');
+        return;
+      }
+      S.wantCoin = true;
+      coin.enter();
+    }
+    function confirmCoin() {
+      if (!S.kind) { toast('请先选择发布内容'); setView('center'); return; }
+      var err = $('createErr');
+      err.classList.remove('show');
+      if (!coin.validate(false)) {
+        /* validate(false) 已把原因写进 #createErr：这里再补一个顶部提示并滚动到错误处 */
+        toast(err.textContent || '请检查代币信息');
+        try { err.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+        return;
+      }
+      coin.saveDraft();
+      S.coin.status = 'ready';
+      setView('center');
+      toast('代币信息已确定');
+    }
+
+    /* ============================================================
+       发布
+       ============================================================ */
+    function buildPlan() {
+      var content = null;
+      if (S.kind === 'drama') {
+        content = {
+          kind: 'drama', title: S.drama.title, desc: S.drama.desc,
+          cover: S.drama.cover, tags: S.drama.tags.slice(),
+          episodes: S.drama.episodes.slice(),
+          video: (S.drama.episodes[0] && S.drama.episodes[0].url) || ''
+        };
+      } else if (S.kind === 'video') {
+        var cur = video.currentSrc();
+        if (!cur) return { content: null, coin: null };
+        content = {
+          kind: 'video', title: cur.name, desc: S.video.desc,
+          cover: cur.cover || '',
+          video: cur.videoSrc || '',
+          duration: cur.duration || 0,
+          srcKind: cur.kind
+        };
+      }
+      var c = S.coin;
+      return { content: content, coin: S.wantCoin === true ? c : null };
+    }
+
+    function openReview() {
+      var plan = buildPlan();
+      if (!plan.content) { toast('请先选择发布内容'); return; }
+      if (S.wantCoin === true) {
+        if (!coin.validate(true)) {
+          /* 直接送进代币页并展示具体原因，而不是留在中心只说"未填写完" */
+          S.wantCoin = true;
+          coin.enter();
+          coin.validate(false);
+          var e = $('createErr');
+          toast(e.textContent || '请检查代币信息');
+          try { e.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (ex) {}
+          return;
+        }
+        coin.saveDraft();
+        S.coin.status = 'ready';
+        renderCenter();
+      }
+      var rows = [];
+      function line(l, v) { rows.push('<div class="pc-row-line"><span>' + l + '</span><b>' + v + '</b></div>'); }
+
+      rows.push('<div class="pc-sec-title">作品</div>');
+      if (plan.content.kind === 'drama') {
+        line('类型', '短剧');
+        line('标题', esc(plan.content.title));
+        line('集数', plan.content.episodes.length + ' 集');
+        line('标签', plan.content.tags.length ? esc(plan.content.tags.join(' · ')) : '—');
+        line('封面', plan.content.cover ? '已设置' : '未设置');
+        if (plan.content.desc) line('简介', esc(plan.content.desc.length > 40 ? plan.content.desc.slice(0, 40) + '…' : plan.content.desc));
+      } else {
+        line('类型', '短视频');
+        line('标题', esc(plan.content.title));
+        line('来源', plan.content.srcKind === 'gallery' ? '素材库' : '本地上传');
+        if (plan.content.duration) line('时长', fmtDur(plan.content.duration));
+        line('封面', plan.content.cover ? '已设置' : '默认首帧');
+        if (plan.content.desc) line('描述', esc(plan.content.desc));
+      }
+
+      if (plan.coin) {
+        var c = plan.coin;
+        rows.push('<div class="pc-sec-title">代币</div>');
+        line('名称', esc(c.name) + ' (' + esc(c.symbol) + ')');
+        line('配对资产', esc(coin.pairName(c.pair)));
+        line('发行费', '0.0005 ETH');
+        line('交易费', (1 + (c.taxPct || 0)).toFixed(2) + '%（创作者税 ' + (c.taxPct || 0).toFixed(2) + '%）');
+        if (c.devBuy > 0) line('开发者预买', fmtQtyLocal(c.devBuy) + ' ' + c.pair + '，随发行交易完成');
+        line('创作者费', c.shareToHolders ? '分给持有人（需两次链上确认）' : '归创作者钱包');
+        if (c.snipe.length) line('狙击税豁免', c.snipe.length + ' 个钱包');
+        line('币图', c.imgIsCustom ? '自选图片' : '使用作品封面');
+      }
+
+      $('reviewRows').innerHTML = rows.join('');
+      $('reviewSub').textContent = plan.coin
+        ? '将同时发布作品并发行代币，请核对以下内容'
+        : '将发布作品，请核对以下内容';
+      $('reviewModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function fmtQtyLocal(v) {
+      if (v == null || isNaN(v)) return '0';
+      return String(Math.round(v * 10000) / 10000);
+    }
+    function closeReview() {
+      $('reviewModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function execPublish() {
+      var plan = buildPlan();
+      if (!plan.content) return;
+      var ok = $('reviewOk');
+      ok.disabled = true; ok.textContent = '发布中…';
+      closeReview();
+
+      setTimeout(function () {
+        try {
+          /* 1. 保存作品 */
+          saveWorks(plan.content);
+
+          /* 2. 发币 */
+          var created = null;
+          if (plan.coin && window.Launch) {
+            var c = plan.coin;
+            created = Launch.createCoin({
+              name: c.name, symbol: c.symbol, tagline: c.tagline,
+              cover: coin.effectiveImg() || plan.content.cover || '',
+              video: plan.content.video || '',
+              sourceType: 'work',
+              sourceTitle: plan.content.title,
+              pair: c.pair,
+              devBuyQty: c.devBuy || 0,
+              devBuyPair: c.pair,
+              social: { x: c.x, tg: c.tg },
+              creatorTaxPct: c.taxPct || 0,
+              shareToHolders: !!c.shareToHolders,
+              creatorWallet: c.creatorWallet || '',
+              snipeExempts: c.snipe || []
+            });
+            lastCoinId = created.id;
+          }
+          ok.disabled = false; ok.textContent = '确认发布';
+          openSuccess(plan, created);
+        } catch (e) {
+          if (ok) { ok.disabled = false; ok.textContent = '确认发布'; }
+          toast('发布失败：' + (e && e.message ? e.message : e));
+          if (window.console && console.error) console.error('execPublish failed', e);
+        }
+      }, 700);
+    }
+
+    function saveWorks(content) {
+      try {
+        var key = content.kind === 'drama' ? 'storyfun_my_dramas' : 'storyfun_my_videos';
+        var list = [];
+        try { list = JSON.parse(localStorage.getItem(key) || '[]') || []; } catch (e) { list = []; }
+        if (content.kind === 'drama') {
+          list.unshift({
+            id: 'd_' + Date.now().toString(36),
+            title: content.title, cover: content.cover || '',
+            video: content.video || '', desc: content.desc,
+            tags: content.tags, kind: 'drama',
+            episodes: content.episodes.length, eps: content.episodes.length,
+            createdAt: Date.now()
+          });
+        } else {
+          list.unshift({
+            id: 'v_' + Date.now().toString(36),
+            title: content.title, cover: content.cover || '',
+            video: content.video || '', desc: content.desc,
+            kind: 'ai', dur: content.duration ? fmtDur(content.duration) : '',
+            createdAt: Date.now()
+          });
+        }
+        localStorage.setItem(key, JSON.stringify(list.slice(0, 50)));
+      } catch (e) {}
+    }
+
+    var lastCoinId = null;
+    function short0x(a) { a = a || ''; return a.length > 14 ? a.slice(0, 6) + '…' + a.slice(-4) : a; }
+
+    function openSuccess(plan, created) {
+      var art = $('suArt'), title = $('suTitle'), name = $('suName'), note = $('suNote'), addr = $('suAddr');
+      if (created) {
+        var img = coin.effectiveImg() || plan.content.cover;
+        art.innerHTML = img ? '<img src="' + img + '" alt="" />' : esc((created.symbol || '?').charAt(0));
+        title.textContent = '发布成功 · ' + (created.symbol || '').toUpperCase() + ' 已发行';
+        name.textContent = plan.content.title + ' · ' + created.name;
+        note.textContent = '作品已发布，代币已上架。' + (created.shareToHolders
+          ? '创作者费将路由给持有人（还需两次链上确认）。'
+          : '创作者费将打入你的钱包。');
+        var full = created.creatorWallet || created.creatorAddr || '';
+        addr.style.display = 'block';
+        addr.textContent = short0x(full);
+        $('suActions').innerHTML =
+          '<button class="pc-modal-ok" onclick="location.href=\'coin-detail.html?id=' + created.id + '\'">查看代币</button>';
+      } else {
+        var cov = plan.content.cover;
+        art.innerHTML = cov ? '<img src="' + cov + '" alt="" />' : (plan.content.kind === 'drama' ? '🎬' : '▶');
+        title.textContent = '发布成功';
+        name.textContent = plan.content.title + (plan.content.kind === 'drama' ? ' · ' + plan.content.episodes.length + ' 集' : '');
+        note.textContent = plan.content.kind === 'drama'
+          ? '短剧已提交审核，可在创作者中心查看。'
+          : '短视频已发布。';
+        addr.style.display = 'none';
+        /* 这一支没有额外去向，保留一个显式按钮；底部链接负责"再发一次 / 回首页" */
+        $('suActions').innerHTML =
+          '<button class="pc-modal-ok" onclick="PC.publishAnother()">再发一次</button>';
+      }
+      $('successModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      window.scrollTo(0, 0);
+    }
+    function copySuAddr() {
+      var el = $('suAddr');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.textContent).then(function () { toast('地址已复制'); }).catch(function () {});
+      } else toast('地址已复制（演示）');
+    }
+    function publishAnother() {
+      $('successModal').classList.remove('open');
+      document.body.style.overflow = '';
+      location.reload();
+    }
+
+    /* ---------- 视频预览 ---------- */
+    function closeVideoPreview() {
+      var v = $('previewVideo');
+      v.pause(); v.removeAttribute('src'); v.load();
+      $('videoPreviewOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    /* ---------- 初始化 ---------- */
+    function init() {
+      /* 短剧：标签 / 封面 / 队列 事件 */
+      $('drTags').innerHTML = TAGS.map(function (t) {
+        return '<span class="pc-tag" data-tag="' + esc(t) + '">' + esc(t) + '</span>';
+      }).join('');
+
+      drama.bind();
+      video.bind();
+      coin.bind();
+
+      /* 短剧标题计数初值 */
+      $('drTitleCount').textContent = cpLen(S.drama.title);
+      $('drDescCount').textContent = cpLen(S.drama.desc);
+
+      /* 发布按钮 */
+      $('submitBtn').addEventListener('click', openReview);
+
+      /* 视频预览遮罩点击关闭 */
+      $('videoPreviewOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeVideoPreview();
+      });
+      /* 弹窗遮罩点击关闭 */
+      $('reviewModal').addEventListener('click', function (e) { if (e.target === this) closeReview(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if ($('videoPreviewOverlay').classList.contains('open')) closeVideoPreview();
+        else if ($('reviewModal').classList.contains('open')) closeReview();
+        else if (document.body.classList.contains('pc-mode-drama') ||
+                 document.body.classList.contains('pc-mode-video') ||
+                 document.body.classList.contains('pc-mode-coin')) backToCenter();
+      });
+
+      /* 深链：?kind=drama|video|coin  &  ?reuse=  &  ?coin=1
+         顺序很重要：先把参数写进 state，再渲染/切视图，
+         否则移动端九宫格等首次渲染会拿到空状态。 */
+      var q = new URLSearchParams(window.location.search);
+      var k = q.get('kind');
+      var reuse = q.get('reuse');
+      if (reuse) {
+        try {
+          var rv = JSON.parse(decodeURIComponent(reuse));
+          if (rv && rv.title) {
+            S.kind = 'video';
+            S.video.src = {
+              kind: 'gallery', id: null, name: rv.title,
+              cover: rv.cover || 'image/hero-bg-blur.jpg',
+              video: rv.video || '', duration: 0, size: 0
+            };
+            S.video.desc = rv.desc || '';
+            S.video.status = 'ready';
+          }
+        } catch (e) {}
+      }
+      /* 预置「发币」开关（供外部入口直接带出发币态） */
+      if (q.get('coin') === '1') S.wantCoin = true;
+
+      /* 深链必须走 openKind()/enterCoin()，不能直接 setView()：
+         各子视图的 enter() 才负责填表单、渲染画廊与选中卡。
+         ?reuse= 已自带 kind=video，此时不要被 ?kind= 覆盖。 */
+      if (!reuse) {
+        if (k === 'drama' || k === 'video') S.kind = k;
+        else if (k === 'coin') S.kind = 'drama';
+      }
+      renderCenter();
+
+      if (k === 'drama' || k === 'video') {
+        if (S.kind) openKind();
+      } else if (k === 'coin') {
+        if (S.wantCoin !== true) S.wantCoin = true;
+        if (S.kind) enterCoin();
+        else toast('请先选择发布内容，再填写代币信息');
+      } else if (reuse) {
+        /* 只带 ?reuse=（资产页「用它发币」）→ 直接呈现已复用作品的短视频表单 */
+        if (S.kind) openKind();
+      }
+    }
+
+    return {
+      init: init,
+      toast: toast,
+      setView: setView,
+      backToCenter: backToCenter,
+      pickKind: pickKind, editKind: editKind, clearKind: clearKind,
+      pickCoin: pickCoin, editCoin: editCoin, clearCoin: clearCoin,
+      confirmDrama: confirmDrama, confirmVideo: confirmVideo, confirmCoin: confirmCoin,
+      closeReview: closeReview, execPublish: execPublish,
+      copySuAddr: copySuAddr, publishAnother: publishAnother,
+      closeVideoPreview: closeVideoPreview,
+      drama: drama, video: video, coin: coin,
+      _state: S
+    };
+  })();
+
+  /* 统一顶栏/移动底栏加载完成后初始化 */
+  window.__pcBoot = function () { PC.init(); };
+  </script>
+
+  <script src="launch-shell.js"></script>
+  <script>
+    /* launch-shell 在 DOM 已就绪时同步 boot，onLaunchShellReady 不会被它调用，
+       这里显式接管初始化（须在 launch-shell.js 之后）。 */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { PC.init(); });
+    } else {
+      PC.init();
+    }
+  </script>
+  <script src="load-desktop-header.js?v=3"></script>
+  <script src="load-sidebar.js"></script>
+  <script src="load-bottom-nav.js"></script>
+</body>
+</html>

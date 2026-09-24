@@ -1439,7 +1439,7 @@
         host.innerHTML = head + '<div class="empty"><div class="empty-icon">✦</div>' +
           '<div class="empty-title">No launches yet.</div>' +
           '<div class="empty-desc">用一个叙事在发射台发射第一个代币</div>' +
-          '<button class="btn btn-primary" onclick="location.href=\'launch.html\'">Launch a token</button></div>';
+          '<button class="btn btn-primary" onclick="location.href=\'publish-center.html\'">Launch a token</button></div>';
         syncFeesBanner();
         return;
       }
@@ -1505,7 +1505,7 @@
       var vids = myAiVideos();
       var host = document.getElementById('asBody');
       if (!vids.length) {
-        host.innerHTML = '<div class="empty"><div class="empty-icon">✦</div><div class="empty-title">还没有 AI 叙事</div><div class="empty-desc">在创建流程中用 AI 生成，视频会自动保存在这里</div><button class="btn btn-primary" onclick="location.href=\'launch.html\'">去生成</button></div>';
+        host.innerHTML = '<div class="empty"><div class="empty-icon">✦</div><div class="empty-title">还没有 AI 叙事</div><div class="empty-desc">在创建流程中用 AI 生成，视频会自动保存在这里</div><button class="btn btn-primary" onclick="location.href=\'publish-center.html\'">去生成</button></div>';
         return;
       }
       host.innerHTML = '<div class="asset-grid">' + vids.map(function (v, i) {
@@ -1552,7 +1552,7 @@
     function reuse(i) {
       var v = window._aiVids[i];
       if (!v) return;
-      location.href = 'launch.html?reuse=' + encodeURIComponent(JSON.stringify(v));
+      location.href = 'publish-center.html?kind=video&reuse=' + encodeURIComponent(JSON.stringify(v));
     }
     document.getElementById('playModal').addEventListener('click', function (e) {
       if (e.target === this) { this.classList.remove('open'); document.getElementById('playVideo').pause(); document.body.style.overflow = ''; }

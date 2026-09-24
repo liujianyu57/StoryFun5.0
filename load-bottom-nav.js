@@ -365,7 +365,7 @@
       </svg>
       <span class="bottom-nav-label">市场</span>
     </a>
-    <a class="bottom-nav-item bottom-nav-create" href="launch.html" data-tab="create" aria-label="发射">
+    <a class="bottom-nav-item bottom-nav-create" href="publish-center.html" data-tab="create" aria-label="发布">
       <svg class="bottom-nav-icon-create" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="1.5"/>
         <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -394,39 +394,14 @@
   <div class="create-action-overlay" id="createActionOverlay">
     <div class="create-action-sheet">
       <div class="create-action-sheet-grip"></div>
-      <a class="create-action-option is-primary" href="launch.html">
+      <a class="create-action-option is-primary" href="publish-center.html">
         <span class="create-action-option-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2l2.4 6.2L21 9.3l-5 4.9 1.2 6.8L12 17.8l-5.2 3.2L8 14.2l-5-4.9 6.6-1.1L12 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
           </svg>
         </span>
         <span class="create-action-option-text">
-          <span class="create-action-option-label">发射代币</span>
-        </span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </a><a class="create-action-option" href="publish.html">
-        <span class="create-action-option-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M3 9h18" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M9 21V9" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M12 7v2M16 5v2M8 5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <span class="create-action-option-text">
-          <span class="create-action-option-label">发布短剧</span>
-        </span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <a class="create-action-option" href="publish-video.html">
-        <span class="create-action-option-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/>
-            <polygon points="10,8 10,16 17,12" fill="currentColor"/>
-          </svg>
-        </span>
-        <span class="create-action-option-text">
-          <span class="create-action-option-label">发布视频</span>
+          <span class="create-action-option-label">发布中心</span>
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </a>

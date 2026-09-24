@@ -189,14 +189,8 @@
                     '<svg class="dh-publish-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
                   '</button>' +
                   '<div class="dh-publish-dropdown">' +
-                    '<a class="dh-publish-item is-primary" href="launch.html">' +
-                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.4 6.2L21 9.3l-5 4.9 1.2 6.8L12 17.8l-5.2 3.2L8 14.2l-5-4.9 6.6-1.1L12 2z"/></svg>发射代币' +
-                    '</a>' +
-                    '<a class="dh-publish-item" href="publish.html">' +
-                      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="3"/><path d="M2 6h12M6 14V6"/></svg>发布短剧' +
-                    '</a>' +
-                    '<a class="dh-publish-item" href="publish-video.html">' +
-                      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3" width="13" height="10" rx="2"/><polygon points="7,5.5 7,10.5 11.5,8" fill="currentColor"/></svg>发布视频' +
+                    '<a class="dh-publish-item is-primary" href="publish-center.html">' +
+                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.4 6.2L21 9.3l-5 4.9 1.2 6.8L12 17.8l-5.2 3.2L8 14.2l-5-4.9 6.6-1.1L12 2z"/></svg>发布中心' +
                     '</a>' +
                   '</div>' +
                 '</div>' +

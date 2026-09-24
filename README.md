@@ -25,8 +25,7 @@
 | 页面 | 说明 |
 |---|---|
 | `narrator.html` | 创作中心 · 我的短剧/视频管理 |
-| `publish.html` | 发布短剧 |
-| `publish-video.html` | 发布视频 |
+| `publish-center.html` | 发布中心 · 一次发布事件：短剧/短视频二选一 + 可选发币 |
 | `edit-drama.html` | 编辑短剧 |
 | `edit-video.html` | 编辑视频 |
 
@@ -65,12 +64,12 @@
 | 页面 | 说明 |
 |---|---|
 | `launchpad.html` | 市场总览 · 浏览未毕业/已毕业的叙事币（无自有搜索/创建入口，统一走顶栏全局搜索与「发布」菜单） |
-| `launch.html` | 创建 · 用 AI 生成或我的作品做叙事，三步发币 |
 | `coin-detail.html` | 交易 · curve/池 两阶段 K 线、Swap、持有者、聊天 |
 | `assets.html` | 我的资产 · 持仓/创建的币/交易历史/AI 叙事 |
 | `launch-coin.js` | 发射台数据与规则引擎（mock：curve、毕业、费用） |
 | `launch.css` | 发射台设计系统（浅色 · 黑主色） |
-| `launch-shell.js` | 发射台顶栏/通知/调试面板 |
+| `launch-shell.js` | 发射台初始化壳（登录态联动 / 调试面板；顶栏由 load-desktop-header 提供） |
+| `publish-center.css` | 发布中心样式（发布中心 / 短剧·短视频 / 代币 三段作用域） |
 | `coin-link.js` | 播放页「已上链」反链徽标 |
 
 > 演示提示：URL 加 `?debug=1` 可打开调试面板（补 ETH / 一键毕业 / 重置数据）。
